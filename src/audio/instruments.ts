@@ -71,3 +71,22 @@ export function perc(ctx: AudioContext, dest: AudioNode, noise: AudioBuffer, tim
   src.connect(bp); bp.connect(g); g.connect(dest);
   src.start(time); src.stop(time + 0.12);
 }
+
+// Reedy double-reed voice (tenora / shawm flavour): sawtooth through a bandpass
+// with vibrato and a slow-ish attack + sustain. For sardana & medieval leads.
+export function reed(ctx: AudioContext, dest: AudioNode, time: number, m: number, dur: number, gain: number) {
+  const f = noteFreq(m);
+  const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f;
+  const lfo = ctx.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 5.5;
+  const lfg = ctx.createGain(); lfg.gain.value = f * 0.012;
+  lfo.connect(lfg); lfg.connect(o.frequency);
+  const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = f * 2.4; bp.Q.value = 2.2;
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.0001, time);
+  g.gain.linearRampToValueAtTime(gain, time + 0.03);
+  g.gain.setValueAtTime(gain, time + Math.max(0.05, dur - 0.06));
+  g.gain.exponentialRampToValueAtTime(0.0001, time + dur);
+  o.connect(bp); bp.connect(g); g.connect(dest);
+  o.start(time); lfo.start(time);
+  o.stop(time + dur + 0.05); lfo.stop(time + dur + 0.05);
+}

@@ -2,20 +2,39 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>El Secreto de Montjuïc</title>
     <style>
-      html, body { margin: 0; padding: 0; height: 100%; background: #07070a; overflow: hidden; }
+      html, body {
+        margin: 0; padding: 0; height: 100%; background: #07070a; overflow: hidden;
+        touch-action: none; -webkit-user-select: none; user-select: none;
+        overscroll-behavior: none; -webkit-tap-highlight-color: transparent;
+      }
       body { display: flex; align-items: center; justify-content: center; }
       #game {
         image-rendering: pixelated;
         image-rendering: crisp-edges;
-        box-shadow: 0 0 40px rgba(0,0,0,0.8);
+        touch-action: none;
+        box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
       }
+      #rotate {
+        position: fixed; inset: 0; background: #07070a; color: #e8dcb0;
+        display: none; align-items: center; justify-content: center; flex-direction: column;
+        font-family: 'Courier New', monospace; text-align: center; z-index: 10; padding: 24px;
+      }
+      #rotate.show { display: flex; }
+      #rotate .ico { font-size: 54px; margin-bottom: 18px; animation: rot 1.8s ease-in-out infinite; }
+      #rotate .sub { font-size: 13px; opacity: 0.65; margin-top: 10px; }
+      @keyframes rot { 0%, 45% { transform: rotate(0deg); } 65%, 100% { transform: rotate(90deg); } }
     </style>
   </head>
   <body>
     <canvas id="game"></canvas>
+    <div id="rotate">
+      <div class="ico">📱</div>
+      <div>Gira el dispositivo en horizontal</div>
+      <div class="sub">El Secreto de Montjuïc</div>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

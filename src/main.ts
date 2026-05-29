@@ -13,11 +13,28 @@ import { buildTitleScene } from './screens/title';
 const W = 320, H = 200, PLAY_H = 144;
 
 const display = document.getElementById('game') as HTMLCanvasElement;
-const SCALE = Math.max(2, Math.min(5, Math.floor(Math.min(window.innerWidth / W, window.innerHeight / H))));
-display.width = W * SCALE;
-display.height = H * SCALE;
+display.width = W;
+display.height = H;
 const dctx = display.getContext('2d')!;
 dctx.imageSmoothingEnabled = false;
+
+// Responsive: scale the canvas ELEMENT to fit the viewport (CSS image-rendering keeps
+// the pixels crisp); show a rotate prompt on portrait mobile.
+const rotateEl = document.getElementById('rotate')!;
+const isMobile = matchMedia('(pointer: coarse)').matches || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+function updateRotate() {
+  rotateEl.classList.toggle('show', isMobile && window.innerHeight > window.innerWidth);
+}
+function fit() {
+  const s = Math.min(window.innerWidth / W, window.innerHeight / H);
+  display.style.width = Math.max(1, Math.round(W * s)) + 'px';
+  display.style.height = Math.max(1, Math.round(H * s)) + 'px';
+  updateRotate();
+}
+window.addEventListener('resize', fit);
+window.addEventListener('orientationchange', fit);
+document.addEventListener('fullscreenchange', fit);
+fit();
 
 const internal = document.createElement('canvas');
 internal.width = W;
@@ -62,6 +79,8 @@ const state: any = {
   ending: null,
   now: 0,
   screen: 'title',
+  settings: false,
+  settingsHover: -1,
 };
 
 // ---------------- generic room hit-tests ----------------
@@ -78,9 +97,10 @@ function toInternal(e: MouseEvent) {
   return { mx: (e.clientX - rc.left) * (W / rc.width), my: (e.clientY - rc.top) * (H / rc.height) };
 }
 
-display.addEventListener('mousemove', (e) => {
+display.addEventListener('pointermove', (e) => {
   if (state.screen === 'title') return;
   const { mx, my } = toInternal(e);
+  if (state.settings) { settingsHoverAt(mx, my); return; }
   if (state.ending) return;
   if (state.dialogue) {
     state.hoverOpt = my >= PANEL_Y ? hitDialogueOption(mx, my, dlgOptions().length) : -1;
@@ -98,7 +118,8 @@ display.addEventListener('mousemove', (e) => {
   }
 });
 
-display.addEventListener('mousedown', (e) => {
+display.addEventListener('pointerdown', (e) => {
+  e.preventDefault();
   if (state.screen === 'title') { startGame(); return; }
   const { mx, my } = toInternal(e);
   if (state.ending) return;
@@ -114,15 +135,23 @@ display.addEventListener('mousedown', (e) => {
 
 function startGame() {
   try { audio.start(); audio.setTheme(themeFor(currentRoom.id)); } catch (e) { /* ignore */ }
+  if (isMobile) {
+    const el: any = document.documentElement;
+    try { (el.requestFullscreen || el.webkitRequestFullscreen)?.call(el)?.catch?.(() => {}); } catch (e) { /* ignore */ }
+    try { (screen.orientation as any)?.lock?.('landscape'); } catch (e) { /* ignore */ }
+  }
   state.screen = 'game';
 }
 window.addEventListener('keydown', (e) => {
   if (e.key === 'm' || e.key === 'M') audio.toggleMute();
+  else if (e.key === 'Escape') state.settings = false;
   else if ((e.key === 'Enter' || e.key === ' ') && state.screen === 'title') startGame();
 });
 
 function onClick(mx: number, my: number) {
+  if (state.settings) { handleSettingsClick(mx, my); return; }
   if (mx < 16 && my < 16) { audio.toggleMute(); audio.sfx('ui'); return; }
+  if (mx >= 17 && mx < 31 && my < 16) { state.settings = true; audio.sfx('ui'); return; }
   if (my >= PANEL_Y) {
     const hp = hitPanel(mx, my);
     if (hp && hp.type === 'verb') { state.verb = hp.verb; state.selectedItem = null; }
@@ -305,6 +334,72 @@ function drawMusicIcon(ctx: CanvasRenderingContext2D) {
   else { ctx.fillRect(12, 7, 1, 1); ctx.fillRect(14, 7, 1, 1); ctx.fillRect(13, 8, 1, 1); ctx.fillRect(12, 9, 1, 1); ctx.fillRect(14, 9, 1, 1); }
 }
 
+// ---------------- settings + song selector ----------------
+const SETT = { x: 78, y: 42, w: 164, h: 112 };
+function drawGearIcon(ctx: CanvasRenderingContext2D) {
+  const col: RGB = state.settings ? [250, 228, 152] : [212, 198, 162];
+  ctx.fillStyle = 'rgba(20,14,18,0.55)';
+  ctx.fillRect(17, 3, 14, 12);
+  ctx.fillStyle = css(col);
+  for (let a = 0; a < 8; a++) {
+    const an = a * Math.PI / 4;
+    ctx.fillRect(Math.round(24 + Math.cos(an) * 5) - 1, Math.round(9 + Math.sin(an) * 5) - 1, 2, 2);
+  }
+  ctx.beginPath(); ctx.arc(24, 9, 4, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = css(P.panelWood);
+  ctx.beginPath(); ctx.arc(24, 9, 1.6, 0, Math.PI * 2); ctx.fill();
+}
+function settingsRows(): Array<{ y: number; kind: string; i: number }> {
+  const rows = [];
+  for (let i = 0; i < audio.SONGS.length; i++) rows.push({ y: SETT.y + 32 + i * 12, kind: 'song', i });
+  rows.push({ y: SETT.y + 32 + audio.SONGS.length * 12 + 6, kind: 'sound', i: -1 });
+  rows.push({ y: SETT.y + SETT.h - 13, kind: 'close', i: -1 });
+  return rows;
+}
+function settingsHoverAt(mx: number, my: number) {
+  state.settingsHover = -1;
+  if (mx < SETT.x || mx > SETT.x + SETT.w) return;
+  for (const r of settingsRows()) {
+    if (my >= r.y - 2 && my < r.y + 10) state.settingsHover = r.kind === 'song' ? r.i : (r.kind === 'sound' ? 10 : 11);
+  }
+}
+function handleSettingsClick(mx: number, my: number) {
+  if (mx < SETT.x || mx > SETT.x + SETT.w || my < SETT.y || my > SETT.y + SETT.h) { state.settings = false; return; }
+  for (const r of settingsRows()) {
+    if (my < r.y - 2 || my >= r.y + 10) continue;
+    if (r.kind === 'song') selectSong(audio.SONGS[r.i].key);
+    else if (r.kind === 'sound') audio.toggleMute();
+    else state.settings = false;
+    return;
+  }
+}
+function selectSong(key: string) {
+  audio.setSong(key);
+  if (key === 'auto') audio.setTheme(themeFor(currentRoom.id));
+  audio.sfx('ui');
+}
+function drawSettings(ctx: CanvasRenderingContext2D) {
+  ctx.fillStyle = 'rgba(8,6,12,0.55)';
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = css(P.panelWood);
+  ctx.fillRect(SETT.x, SETT.y, SETT.w, SETT.h);
+  ctx.fillStyle = css(P.panelWoodLit);
+  ctx.fillRect(SETT.x, SETT.y, SETT.w, 1); ctx.fillRect(SETT.x, SETT.y, 1, SETT.h);
+  ctx.fillStyle = css(P.black);
+  ctx.fillRect(SETT.x, SETT.y + SETT.h - 1, SETT.w, 1); ctx.fillRect(SETT.x + SETT.w - 1, SETT.y, 1, SETT.h);
+  const tw = textWidth('AJUSTES', 1, 1);
+  drawText(ctx, 'AJUSTES', Math.round(SETT.x + SETT.w / 2 - tw / 2), SETT.y + 6, P.verbHot, 1, P.black, 1);
+  drawText(ctx, 'Música', SETT.x + 8, SETT.y + 20, P.inkLight, 1, P.black, 1);
+  for (let i = 0; i < audio.SONGS.length; i++) {
+    const cur = audio.getSong() === audio.SONGS[i].key;
+    const col = cur ? P.verbHot : (state.settingsHover === i ? P.inkLight : P.verbIdle);
+    drawText(ctx, (cur ? '· ' : '  ') + audio.SONGS[i].label, SETT.x + 14, SETT.y + 32 + i * 12, col, 1, P.black, 1);
+  }
+  const sy2 = SETT.y + 32 + audio.SONGS.length * 12 + 6;
+  drawText(ctx, 'Sonido: ' + (audio.isMuted() ? 'Off' : 'On'), SETT.x + 8, sy2, state.settingsHover === 10 ? P.verbHot : P.inkLight, 1, P.black, 1);
+  drawText(ctx, 'Cerrar', SETT.x + SETT.w - 44, SETT.y + SETT.h - 13, state.settingsHover === 11 ? P.verbHot : P.verbIdle, 1, P.black, 1);
+}
+
 // ---------------- loop ----------------
 const SPEED = 64;
 let last = 0, start = 0;
@@ -340,12 +435,12 @@ function frame(ts: number) {
 
   if (state.screen === 'title') {
     drawTitle(t);
-    dctx.drawImage(internal, 0, 0, W * SCALE, H * SCALE);
+    dctx.drawImage(internal, 0, 0);
     requestAnimationFrame(frame);
     return;
   }
 
-  if (!state.ending) update(dt);
+  if (!state.ending && !state.settings) update(dt);
 
   ictx.drawImage(bgCache[currentRoom.id], 0, 0);
   if (!currentRoom.bgImage) currentRoom.overlays?.(ictx, t);
@@ -368,9 +463,11 @@ function frame(ts: number) {
   if (state.dialogue) drawDialoguePanel(ictx, dlgOptions(), state.hoverOpt);
   else drawPanel(ictx, buildSentence(state), state.verb, state.inventory, state.selectedItem ? state.selectedItem.id : null);
   drawMusicIcon(ictx);
+  drawGearIcon(ictx);
+  if (state.settings) drawSettings(ictx);
   if (state.ending) drawEnding(ictx);
 
-  dctx.drawImage(internal, 0, 0, W * SCALE, H * SCALE);
+  dctx.drawImage(internal, 0, 0);
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
