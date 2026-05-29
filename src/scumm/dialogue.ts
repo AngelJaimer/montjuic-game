@@ -9,9 +9,11 @@ const OPT_H = 10;
 
 // Visible options at the current node, filtered by flags and one-time use.
 // Each carries a stable `key` (nodeId:index) so `once` survives re-filtering.
-export function currentOptions(dlg: Dialogue, node: string, flags: any, used: Set<string>): Array<Opt & { key: string }> {
+export function currentOptions(dlg: Dialogue, node: string, flags: any, used: Set<string>, id = ''): Array<Opt & { key: string }> {
+  // key is namespaced by the speaker `id` so a `once` option on one NPC never
+  // collides with the same node:index on another NPC (which would wrongly hide it).
   return dlg[node].options
-    .map((o, i) => ({ ...o, key: node + ':' + i }))
+    .map((o, i) => ({ ...o, key: id + ':' + node + ':' + i }))
     .filter((o) => (!o.if || flags[o.if]) && (!o.ifNot || !flags[o.ifNot]) && (!o.once || !used.has(o.key)));
 }
 

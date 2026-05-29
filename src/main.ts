@@ -285,7 +285,7 @@ function giveItem(npc: any, item: any) {
 // ---------------- dialogue ----------------
 function dlgOptions() {
   const d = state.dialogue;
-  return d ? currentOptions(d.npc.dialogue, d.node, state.flags, state.used) : [];
+  return d ? currentOptions(d.npc.dialogue, d.node, state.flags, state.used, d.npc.id) : [];
 }
 function openDialogue(npc: any) {
   state.dialogue = { npc, node: 'start', lines: wrapText(npc.dialogue.start.npc, 190) };
