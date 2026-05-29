@@ -79,6 +79,27 @@ export const ITEMS: Record<string, { name: string; draw: Draw }> = {
       ctx.beginPath(); ctx.arc(x + 10, y + 16, 2, 0, Math.PI * 2); ctx.fill();
     },
   },
+  alpiste: {
+    name: 'el alpiste',
+    draw: (ctx, x, y) => {
+      fill(ctx, x + 5, y + 8, 10, 9, [184, 152, 104]);   // little pouch
+      fill(ctx, x + 6, y + 9, 8, 3, [206, 176, 128]);
+      fill(ctx, x + 7, y + 6, 6, 3, [150, 120, 80]);     // tied neck
+      ctx.fillStyle = css([120, 92, 60]);                // spilled seeds
+      ctx.fillRect(x + 5, y + 17, 1, 1); ctx.fillRect(x + 8, y + 18, 1, 1); ctx.fillRect(x + 11, y + 17, 1, 1);
+    },
+  },
+  clau1: {
+    name: 'la primera clave',
+    draw: (ctx, x, y) => {
+      ctx.strokeStyle = css(P.winLit); ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(x + 6, y + 8, 3, 0, Math.PI * 2); ctx.stroke(); // bow
+      ctx.fillStyle = css(P.winLit);
+      ctx.fillRect(x + 8, y + 7, 9, 2);                  // shaft
+      ctx.fillRect(x + 15, y + 9, 2, 3); ctx.fillRect(x + 12, y + 9, 2, 2); // teeth
+      ctx.fillStyle = css(P.stoneShadow); ctx.fillRect(x + 5, y + 7, 1, 2);
+    },
+  },
 };
 
 export function makeItem(id: string) {

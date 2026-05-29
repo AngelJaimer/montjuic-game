@@ -78,12 +78,35 @@ export function start() {
   if (running) return;
   try {
     ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    if (ctx.state === 'suspended') ctx.resume();
     master = ctx.createGain(); master.gain.value = muted ? 0 : 0.34;
     const comp = ctx.createDynamicsCompressor();
     const conv = ctx.createConvolver(); conv.buffer = makeImpulse(ctx);
     wet = ctx.createGain(); wet.gain.value = 0.16;
-    master.connect(comp); comp.connect(ctx.destination);
-    master.connect(wet); wet.connect(conv); conv.connect(ctx.destination);
+    master.connect(comp);
+    master.connect(wet); wet.connect(conv);
+
+    // On iOS, route output through a <audio> media element so the OS treats it as
+    // media playback (plays through the silent switch, uses media volume) instead of
+    // the ringer channel. Fall back to the speakers if that path isn't available.
+    const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && (navigator as any).maxTouchPoints > 1);
+    const toSpeakers = () => { try { comp.connect(ctx!.destination); conv.connect(ctx!.destination); } catch (e) { /* ignore */ } };
+    let routed = false;
+    if (iOS) {
+      try {
+        const sd = ctx.createMediaStreamDestination();
+        comp.connect(sd); conv.connect(sd);
+        let el = document.getElementById('audiosink') as HTMLAudioElement;
+        if (!el) { el = new Audio(); el.id = 'audiosink'; document.body.appendChild(el); }
+        (el as any).playsInline = true; el.autoplay = true;
+        (el as any).srcObject = sd.stream;
+        const p = el.play();
+        if (p && p.catch) p.catch(() => toSpeakers());
+        routed = true;
+      } catch (e) { routed = false; }
+    }
+    if (!routed) toSpeakers();
+
     noise = makeNoise(ctx);
     nextTime = ctx.currentTime + 0.1;
     stepNo = 0;

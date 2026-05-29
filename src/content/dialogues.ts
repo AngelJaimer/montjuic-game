@@ -5,6 +5,7 @@ export interface Opt {
   text: string;
   to: string;
   set?: string;
+  give?: string;   // grant this item id when chosen
   if?: string;
   ifNot?: string;
   once?: boolean;
@@ -147,5 +148,65 @@ export const GUARDIA_DIALOGUE: Dialogue = {
   importante: {
     npc: 'Todo el mundo dice que es importante. El salvoconducto no opina: o lo tienes, o no pasas.',
     options: [{ text: 'Entendido.', to: 'end' }],
+  },
+};
+
+// ---------- Episode 2: La Rambla ----------
+export const OCELLAIRE_DIALOGUE: Dialogue = {
+  start: {
+    npc: '¡Ocells, ocells! Canaris, caderneres, coloms... ¡todo lo que canta y lo que ensucia!',
+    options: [
+      { text: '¿Me das un puñado de alpiste?', to: 'alpiste', give: 'alpiste', set: 'has_alpiste', once: true },
+      { text: '¿Qué pájaros vendes?', to: 'birds' },
+      { text: 'Nada, gracias. (Salir)', to: 'end' },
+    ],
+  },
+  alpiste: {
+    npc: 'Toma, un buen puñado. Pero no alimentes a las palomas, ¿eh? Que de esas ya vamos sobrados.',
+    options: [{ text: 'Lo tendré en cuenta... je, je.', to: 'end' }],
+  },
+  birds: {
+    npc: 'De todo. Aunque las palomas se venden solas: acuden a quien lleva alpiste como por arte de magia. Es un imán de plumas, créeme.',
+    options: [
+      { text: 'Interesante...', to: 'start' },
+      { text: 'Gracias. (Salir)', to: 'end' },
+    ],
+  },
+};
+
+export const ESTATUA_DIALOGUE: Dialogue = {
+  start: {
+    npc: '...',
+    options: [
+      { text: '¿Hola? ¿Me oye?', to: 'sil1' },
+      { text: 'Le voy a hacer cosquillas.', to: 'sil2', once: true },
+      { text: 'Dejarlo en paz. (Salir)', to: 'end' },
+    ],
+  },
+  sil1: {
+    npc: '(No se inmuta. Ni un parpadeo. Es bueno. Es muy bueno.)',
+    options: [{ text: 'Insistir', to: 'sil3' }, { text: '(Salir)', to: 'end' }],
+  },
+  sil2: {
+    npc: '(Una mirada de advertencia le rompe la pose una décima de segundo. Mejor no tentar a la suerte.)',
+    options: [{ text: '(Salir)', to: 'end' }],
+  },
+  sil3: {
+    npc: '(Nada. Sostiene una llave en alto, parte de su número. Contra una pose así no puedo a las bravas... tendré que ser más listo.)',
+    options: [{ text: '(Salir)', to: 'end' }],
+  },
+};
+
+export const FLORISTA_DIALOGUE: Dialogue = {
+  start: {
+    npc: '¡Flors fresques! Rosas, claveles... un ramo para quien amas. O para ti mismo, que también te lo mereces.',
+    options: [
+      { text: 'Qué colores tan bonitos.', to: 'colors' },
+      { text: 'Solo miro, gracias. (Salir)', to: 'end' },
+    ],
+  },
+  colors: {
+    npc: 'La Rambla de les Flors, la llaman. Color todo el año, llueva, truene o desembarquen piratas.',
+    options: [{ text: '(Salir)', to: 'end' }],
   },
 };

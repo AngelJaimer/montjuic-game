@@ -302,3 +302,108 @@ export function drawGuard(ctx: CanvasRenderingContext2D, fx: number, fy: number,
 
   ctx.restore();
 }
+
+const SILVER: RGB = [184, 188, 198];
+const SILVER_D: RGB = [132, 136, 148];
+const SILVER_L: RGB = [216, 220, 228];
+
+// L'Estàtua Vivent — a silver-painted living statue, frozen heroic pose, key held aloft.
+export function drawStatue(ctx: CanvasRenderingContext2D, fx: number, fy: number, _facing: 'left' | 'right' = 'right', _t = 0) {
+  const cx = Math.round(fx);
+  const fyR = Math.round(fy);
+  // plinth
+  blk(ctx, cx - 10, fyR, 20, 5, P.stone);
+  px(ctx, cx - 9, fyR + 1, 18, 1, P.stoneLit);
+  // legs + torso (monochrome silver)
+  blk(ctx, cx - 5, fyR - 18, 4, 16, SILVER);
+  blk(ctx, cx + 1, fyR - 18, 4, 16, SILVER);
+  blk(ctx, cx - 6, fyR - 34, 12, 18, SILVER);
+  px(ctx, cx - 5, fyR - 33, 3, 16, SILVER_D);
+  px(ctx, cx + 3, fyR - 33, 2, 16, SILVER_L);
+  // left arm down, right arm raised with the key
+  blk(ctx, cx - 9, fyR - 32, 3, 14, SILVER);
+  blk(ctx, cx + 6, fyR - 44, 3, 16, SILVER);
+  px(ctx, cx + 6, fyR - 46, 3, 3, SILVER_L);
+  px(ctx, cx + 6, fyR - 49, 3, 4, P.winLit);     // the golden key
+  px(ctx, cx + 5, fyR - 50, 5, 2, P.winLit);
+  px(ctx, cx + 9, fyR - 48, 2, 2, P.winLit);
+  // head + laurel
+  const hy = fyR - 45;
+  blk(ctx, cx - 4, hy, 9, 11, SILVER);
+  px(ctx, cx - 3, hy + 1, 3, 9, SILVER_D);
+  px(ctx, cx - 4, hy - 1, 9, 2, SILVER_L);
+  px(ctx, cx + 1, hy + 4, 1, 1, SILVER_D);
+  px(ctx, cx + 3, hy + 4, 1, 1, SILVER_D);
+}
+
+const SELLER_VEST: RGB = [92, 114, 90];
+
+// L'Ocellaire — the bird-seller, holding a little cage with a canary.
+export function drawOcellaire(ctx: CanvasRenderingContext2D, fx: number, fy: number, facing: 'left' | 'right' = 'left', t = 0) {
+  const cx = Math.round(fx);
+  const fyR = Math.round(fy);
+  ctx.save();
+  if (facing === 'left') { ctx.translate(cx * 2, 0); ctx.scale(-1, 1); }
+  blk(ctx, cx - 5, fyR - 18, 4, 16, P.woodDark);
+  blk(ctx, cx + 1, fyR - 18, 4, 16, P.woodDark);
+  blk(ctx, cx - 6, fyR - 4, 7, 4, P.black);
+  blk(ctx, cx + 0, fyR - 4, 7, 4, P.black);
+  const ty = fyR - 34;
+  blk(ctx, cx - 6, ty, 12, 18, SELLER_VEST);
+  px(ctx, cx - 2, ty + 1, 4, 12, P.shirt);
+  blk(ctx, cx - 9, ty + 3, 3, 12, SELLER_VEST);
+  px(ctx, cx - 9, ty + 12, 3, 3, P.skin);
+  blk(ctx, cx + 6, ty + 3, 3, 9, SELLER_VEST);
+  px(ctx, cx + 6, ty + 10, 3, 3, P.skin);
+  // birdcage
+  const gx = cx + 9;
+  blk(ctx, gx, ty + 2, 9, 13, P.woodDark);
+  for (let i = 1; i < 4; i++) px(ctx, gx + i * 2, ty + 3, 1, 11, [150, 116, 80]);
+  px(ctx, gx + 3, ty + 7, 3, 3, P.winLit);  // canary
+  px(ctx, gx + 3, ty + 1, 3, 1, P.stone);   // ring on top
+  const hy = fyR - 44;
+  blk(ctx, cx - 4, hy, 9, 10, P.skin);
+  px(ctx, cx - 3, hy + 1, 3, 8, P.skinShadow);
+  px(ctx, cx - 5, hy - 2, 11, 3, [110, 80, 50]); // cap
+  px(ctx, cx + 1, hy + 4, 1, 2, P.black);
+  px(ctx, cx + 3, hy + 4, 1, 2, P.black);
+  px(ctx, cx - 1, hy + 7, 5, 1, P.woodDark);
+  ctx.restore();
+}
+
+const SKIRT2: RGB = [120, 70, 96];
+const BLOUSE2: RGB = [228, 212, 182];
+
+// La Florista — flower-seller with a tray of colourful blooms.
+export function drawFlorista(ctx: CanvasRenderingContext2D, fx: number, fy: number, facing: 'left' | 'right' = 'left', t = 0) {
+  const cx = Math.round(fx);
+  const fyR = Math.round(fy);
+  ctx.save();
+  if (facing === 'left') { ctx.translate(cx * 2, 0); ctx.scale(-1, 1); }
+  blk(ctx, cx - 4, fyR - 4, 4, 4, P.black);
+  blk(ctx, cx + 0, fyR - 4, 4, 4, P.black);
+  ctx.fillStyle = css(SKIRT2);
+  ctx.beginPath();
+  ctx.moveTo(cx - 5, fyR - 20); ctx.lineTo(cx + 5, fyR - 20); ctx.lineTo(cx + 8, fyR - 3); ctx.lineTo(cx - 8, fyR - 3);
+  ctx.closePath(); ctx.fill();
+  const ty = fyR - 34;
+  blk(ctx, cx - 6, ty, 12, 16, BLOUSE2);
+  px(ctx, cx - 4, ty + 6, 8, 9, P.cloud);
+  blk(ctx, cx - 9, ty + 4, 3, 10, BLOUSE2);
+  blk(ctx, cx + 6, ty + 4, 3, 10, BLOUSE2);
+  px(ctx, cx - 9, ty + 12, 3, 3, P.skin);
+  px(ctx, cx + 6, ty + 12, 3, 3, P.skin);
+  // flower tray held in front
+  blk(ctx, cx - 9, fyR - 22, 18, 5, P.woodDark);
+  const cols: RGB[] = [P.flagRed, P.winLit, [220, 130, 170], [120, 200, 120]];
+  for (let i = 0; i < 7; i++) { ctx.fillStyle = css(cols[i % 4]); ctx.fillRect(cx - 8 + i * 2, fyR - 23, 1, 2); }
+  const hy = fyR - 44;
+  blk(ctx, cx - 5, hy, 10, 11, P.skin);
+  px(ctx, cx - 4, hy + 1, 3, 9, P.skinShadow);
+  px(ctx, cx - 6, hy - 2, 12, 4, [150, 90, 60]);   // hair
+  px(ctx, cx + 4, hy - 1, 2, 2, P.flagRed);        // flower in hair
+  px(ctx, cx - 1, hy + 4, 1, 2, P.black);
+  px(ctx, cx + 3, hy + 4, 1, 2, P.black);
+  px(ctx, cx + 0, hy + 8, 3, 1, P.skinShadow);
+  ctx.restore();
+}

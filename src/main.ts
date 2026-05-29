@@ -43,7 +43,12 @@ const ictx = internal.getContext('2d')!;
 ictx.imageSmoothingEnabled = false;
 
 const titleBg = buildTitleScene();
-function themeFor(id: string): 'town' | 'gate' { return id === 'gate' ? 'gate' : 'town'; }
+// Each scene gets its own default music (overridable via the song selector).
+const ROOM_THEME: Record<string, 'town' | 'gate' | 'sardana' | 'medieval'> = {
+  port: 'town', mercat: 'town', gate: 'gate',
+  rambla: 'sardana', elborn: 'medieval', sagrada: 'town', santamaria: 'medieval',
+};
+function themeFor(id: string) { return ROOM_THEME[id] || 'town'; }
 
 const bgCache: Record<string, HTMLCanvasElement> = {};
 function applyBgImage(room: any) {
@@ -81,6 +86,9 @@ const state: any = {
   screen: 'title',
   settings: false,
   settingsHover: -1,
+  showSaveInfo: false,
+  saveMsg: '',
+  saveMsgUntil: 0,
 };
 
 // ---------------- generic room hit-tests ----------------
@@ -246,6 +254,7 @@ function selectOption(i: number) {
   const o = dlgOptions()[i];
   if (!o) return;
   if (o.set) state.flags[o.set] = true;
+  if (o.give) addItem(o.give);
   if (o.once) state.used.add(o.key);
   state.speech = { lines: wrapText(o.text, 180), until: state.now + Math.max(1200, o.text.length * 45), color: [238, 238, 224], x: state.guy.x };
   if (o.to === 'end') { state.dialogue = null; return; }
@@ -263,7 +272,45 @@ function switchRoom(toId: string, entry: any) {
   state.guy.x = entry.x; state.guy.y = entry.y;
   state.guy.moving = false; state.target = null; state.pending = null;
   state.dialogue = null; state.speech = null; state.npcSpeech = null; state.selectedItem = null;
+  saveGame(true);
 }
+
+// ---------------- save / load (localStorage) ----------------
+const SAVE_KEY = 'montjuic_save_v1';
+function flashSave(msg: string) { state.saveMsg = msg; state.saveMsgUntil = state.now + 1900; }
+function hasSave() { try { return !!localStorage.getItem(SAVE_KEY); } catch (e) { return false; } }
+function saveGame(silent = false) {
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify({
+      room: currentRoom.id,
+      guy: { x: Math.round(state.guy.x), y: Math.round(state.guy.y), facing: state.guy.facing },
+      verb: state.verb,
+      inv: state.inventory.map((i: any) => i.id),
+      flags: state.flags,
+      used: Array.from(state.used),
+      song: audio.getSong(),
+    }));
+    if (!silent) flashSave('Partida guardada');
+  } catch (e) { if (!silent) flashSave('No se pudo guardar'); }
+}
+function loadGame() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) { flashSave('No hay partida'); return; }
+    const d = JSON.parse(raw);
+    state.flags = d.flags || {};
+    state.used = new Set(d.used || []);
+    state.inventory = (d.inv || []).map((id: string) => makeItem(id));
+    state.verb = d.verb || 'Mirar';
+    state.screen = 'game';
+    switchRoom(d.room || 'port', d.guy || ROOMS[d.room || 'port'].start);
+    if (d.guy) state.guy.facing = d.guy.facing || 'right';
+    if (d.song) { audio.setSong(d.song); if (d.song === 'auto') audio.setTheme(themeFor(currentRoom.id)); }
+    state.settings = false;
+    flashSave('Partida cargada');
+  } catch (e) { flashSave('No se pudo cargar'); }
+}
+function eraseGame() { try { localStorage.removeItem(SAVE_KEY); flashSave('Partida borrada'); } catch (e) { /* ignore */ } }
 
 // ---------------- render bits ----------------
 function drawExitArrows(ctx: CanvasRenderingContext2D, t: number) {
@@ -320,7 +367,8 @@ function drawTitle(t: number) {
   centerText('EL SECRETO DE', 26, 2, P.inkLight);
   centerText('MONTJUÏC', 50, 4, P.verbHot);
   centerText('Episodio 1: El Puerto', 98, 1, P.inkLight);
-  if (Math.sin(t * 3) > 0) centerText('Haz clic para empezar', 178, 1, P.verbHot);
+  if (Math.sin(t * 3) > 0) centerText('Haz clic para empezar', 172, 1, P.verbHot);
+  centerText('un spin-off de Monkey Island · por Angel Jaime', 190, 1, P.verbIdle);
 }
 function drawMusicIcon(ctx: CanvasRenderingContext2D) {
   const on = !audio.isMuted();
@@ -334,8 +382,12 @@ function drawMusicIcon(ctx: CanvasRenderingContext2D) {
   else { ctx.fillRect(12, 7, 1, 1); ctx.fillRect(14, 7, 1, 1); ctx.fillRect(13, 8, 1, 1); ctx.fillRect(12, 9, 1, 1); ctx.fillRect(14, 9, 1, 1); }
 }
 
-// ---------------- settings + song selector ----------------
-const SETT = { x: 78, y: 42, w: 164, h: 112 };
+// ---------------- settings: songs + save ----------------
+const SETT = { x: 66, y: 22, w: 188, h: 168 };
+const songY = (i: number) => SETT.y + 30 + i * 11;
+const SOUND_Y = () => SETT.y + 78;
+const SAVE_Y = () => SETT.y + 108;
+const CLOSE_Y = () => SETT.y + SETT.h - 13;
 function drawGearIcon(ctx: CanvasRenderingContext2D) {
   const col: RGB = state.settings ? [250, 228, 152] : [212, 198, 162];
   ctx.fillStyle = 'rgba(20,14,18,0.55)';
@@ -349,55 +401,55 @@ function drawGearIcon(ctx: CanvasRenderingContext2D) {
   ctx.fillStyle = css(P.panelWood);
   ctx.beginPath(); ctx.arc(24, 9, 1.6, 0, Math.PI * 2); ctx.fill();
 }
-function settingsRows(): Array<{ y: number; kind: string; i: number }> {
-  const rows = [];
-  for (let i = 0; i < audio.SONGS.length; i++) rows.push({ y: SETT.y + 32 + i * 12, kind: 'song', i });
-  rows.push({ y: SETT.y + 32 + audio.SONGS.length * 12 + 6, kind: 'sound', i: -1 });
-  rows.push({ y: SETT.y + SETT.h - 13, kind: 'close', i: -1 });
-  return rows;
-}
-function settingsHoverAt(mx: number, my: number) {
-  state.settingsHover = -1;
-  if (mx < SETT.x || mx > SETT.x + SETT.w) return;
-  for (const r of settingsRows()) {
-    if (my >= r.y - 2 && my < r.y + 10) state.settingsHover = r.kind === 'song' ? r.i : (r.kind === 'sound' ? 10 : 11);
-  }
-}
-function handleSettingsClick(mx: number, my: number) {
-  if (mx < SETT.x || mx > SETT.x + SETT.w || my < SETT.y || my > SETT.y + SETT.h) { state.settings = false; return; }
-  for (const r of settingsRows()) {
-    if (my < r.y - 2 || my >= r.y + 10) continue;
-    if (r.kind === 'song') selectSong(audio.SONGS[r.i].key);
-    else if (r.kind === 'sound') audio.toggleMute();
-    else state.settings = false;
-    return;
-  }
-}
 function selectSong(key: string) {
   audio.setSong(key);
   if (key === 'auto') audio.setTheme(themeFor(currentRoom.id));
   audio.sfx('ui');
 }
+function settingsHoverAt(mx: number, my: number) {
+  state.settingsHover = -1;
+  if (mx < SETT.x || mx > SETT.x + SETT.w) return;
+  for (let i = 0; i < audio.SONGS.length; i++) if (my >= songY(i) - 2 && my < songY(i) + 9) state.settingsHover = i;
+}
+function handleSettingsClick(mx: number, my: number) {
+  if (mx < SETT.x || mx > SETT.x + SETT.w || my < SETT.y || my > SETT.y + SETT.h) { state.settings = false; return; }
+  for (let i = 0; i < audio.SONGS.length; i++) if (my >= songY(i) - 2 && my < songY(i) + 9) { selectSong(audio.SONGS[i].key); return; }
+  if (my >= SOUND_Y() - 2 && my < SOUND_Y() + 9) { audio.toggleMute(); return; }
+  if (my >= SAVE_Y() - 2 && my < SAVE_Y() + 10) {
+    if (mx < SETT.x + 56) saveGame();
+    else if (mx < SETT.x + 100) loadGame();
+    else if (mx < SETT.x + 146) eraseGame();
+    else state.showSaveInfo = !state.showSaveInfo;
+    return;
+  }
+  if (my >= CLOSE_Y() - 2) state.settings = false;
+}
 function drawSettings(ctx: CanvasRenderingContext2D) {
-  ctx.fillStyle = 'rgba(8,6,12,0.55)';
-  ctx.fillRect(0, 0, W, H);
-  ctx.fillStyle = css(P.panelWood);
-  ctx.fillRect(SETT.x, SETT.y, SETT.w, SETT.h);
-  ctx.fillStyle = css(P.panelWoodLit);
-  ctx.fillRect(SETT.x, SETT.y, SETT.w, 1); ctx.fillRect(SETT.x, SETT.y, 1, SETT.h);
-  ctx.fillStyle = css(P.black);
-  ctx.fillRect(SETT.x, SETT.y + SETT.h - 1, SETT.w, 1); ctx.fillRect(SETT.x + SETT.w - 1, SETT.y, 1, SETT.h);
-  const tw = textWidth('AJUSTES', 1, 1);
-  drawText(ctx, 'AJUSTES', Math.round(SETT.x + SETT.w / 2 - tw / 2), SETT.y + 6, P.verbHot, 1, P.black, 1);
-  drawText(ctx, 'Música', SETT.x + 8, SETT.y + 20, P.inkLight, 1, P.black, 1);
+  ctx.fillStyle = 'rgba(8,6,12,0.6)'; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = css(P.panelWood); ctx.fillRect(SETT.x, SETT.y, SETT.w, SETT.h);
+  ctx.fillStyle = css(P.panelWoodLit); ctx.fillRect(SETT.x, SETT.y, SETT.w, 1); ctx.fillRect(SETT.x, SETT.y, 1, SETT.h);
+  ctx.fillStyle = css(P.black); ctx.fillRect(SETT.x, SETT.y + SETT.h - 1, SETT.w, 1); ctx.fillRect(SETT.x + SETT.w - 1, SETT.y, 1, SETT.h);
+  const ctr = (s: string, y: number, col: RGB) => { const w = textWidth(s, 1, 1); drawText(ctx, s, Math.round(SETT.x + SETT.w / 2 - w / 2), y, col, 1, P.black, 1); };
+  ctr('AJUSTES', SETT.y + 5, P.verbHot);
+  drawText(ctx, 'Música', SETT.x + 8, SETT.y + 18, P.inkLight, 1, P.black, 1);
   for (let i = 0; i < audio.SONGS.length; i++) {
     const cur = audio.getSong() === audio.SONGS[i].key;
     const col = cur ? P.verbHot : (state.settingsHover === i ? P.inkLight : P.verbIdle);
-    drawText(ctx, (cur ? '· ' : '  ') + audio.SONGS[i].label, SETT.x + 14, SETT.y + 32 + i * 12, col, 1, P.black, 1);
+    drawText(ctx, (cur ? '· ' : '  ') + audio.SONGS[i].label, SETT.x + 14, songY(i), col, 1, P.black, 1);
   }
-  const sy2 = SETT.y + 32 + audio.SONGS.length * 12 + 6;
-  drawText(ctx, 'Sonido: ' + (audio.isMuted() ? 'Off' : 'On'), SETT.x + 8, sy2, state.settingsHover === 10 ? P.verbHot : P.inkLight, 1, P.black, 1);
-  drawText(ctx, 'Cerrar', SETT.x + SETT.w - 44, SETT.y + SETT.h - 13, state.settingsHover === 11 ? P.verbHot : P.verbIdle, 1, P.black, 1);
+  drawText(ctx, 'Sonido: ' + (audio.isMuted() ? 'Off' : 'On'), SETT.x + 8, SOUND_Y(), P.inkLight, 1, P.black, 1);
+  drawText(ctx, 'Partida', SETT.x + 8, SETT.y + 94, P.inkLight, 1, P.black, 1);
+  drawText(ctx, 'Guardar', SETT.x + 8, SAVE_Y(), P.verbIdle, 1, P.black, 1);
+  drawText(ctx, 'Cargar', SETT.x + 58, SAVE_Y(), hasSave() ? P.verbIdle : P.panelWoodLit, 1, P.black, 1);
+  drawText(ctx, 'Borrar', SETT.x + 102, SAVE_Y(), P.verbIdle, 1, P.black, 1);
+  drawText(ctx, '(i)', SETT.x + 150, SAVE_Y(), state.showSaveInfo ? P.verbHot : P.verbIdle, 1, P.black, 1);
+  if (state.showSaveInfo) {
+    const info = ['Tu progreso se guarda solo en', 'este navegador. Sobrevive al', 'refrescar: pulsa Cargar para', 'seguir. Borrar lo elimina.'];
+    for (let i = 0; i < info.length; i++) drawText(ctx, info[i], SETT.x + 8, SETT.y + 120 + i * 9, P.skin, 1, P.black, 1);
+  } else if (state.saveMsg && state.now < state.saveMsgUntil) {
+    ctr(state.saveMsg, SETT.y + 126, P.verbHot);
+  }
+  drawText(ctx, 'Cerrar', SETT.x + SETT.w - 44, CLOSE_Y(), P.verbIdle, 1, P.black, 1);
 }
 
 // ---------------- loop ----------------

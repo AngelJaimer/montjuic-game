@@ -5,6 +5,7 @@ import {
 } from './port';
 import { MERCAT } from './mercat';
 import { GATE } from './gate';
+import { RAMBLA } from './rambla';
 
 const PORT: Room = {
   id: 'port',
@@ -24,6 +25,7 @@ export const ROOMS: Record<string, Room> = {
   port: PORT,
   mercat: MERCAT,
   gate: GATE,
+  rambla: RAMBLA,
 };
 
 export const START_ROOM = 'port';
