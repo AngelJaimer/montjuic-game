@@ -89,6 +89,7 @@ const state: any = {
   showSaveInfo: false,
   saveMsg: '',
   saveMsgUntil: 0,
+  about: false,
 };
 
 // ---------------- generic room hit-tests ----------------
@@ -108,6 +109,7 @@ function toInternal(e: MouseEvent) {
 display.addEventListener('pointermove', (e) => {
   if (state.screen === 'title') return;
   const { mx, my } = toInternal(e);
+  if (state.about) return;
   if (state.settings) { settingsHoverAt(mx, my); return; }
   if (state.ending) return;
   if (state.dialogue) {
@@ -152,11 +154,12 @@ function startGame() {
 }
 window.addEventListener('keydown', (e) => {
   if (e.key === 'm' || e.key === 'M') audio.toggleMute();
-  else if (e.key === 'Escape') state.settings = false;
+  else if (e.key === 'Escape') { if (state.about) state.about = false; else state.settings = false; }
   else if ((e.key === 'Enter' || e.key === ' ') && state.screen === 'title') startGame();
 });
 
 function onClick(mx: number, my: number) {
+  if (state.about) { handleAboutClick(mx, my); return; }
   if (state.settings) { handleSettingsClick(mx, my); return; }
   if (mx < 16 && my < 16) { audio.toggleMute(); audio.sfx('ui'); return; }
   if (mx >= 17 && mx < 31 && my < 16) { state.settings = true; audio.sfx('ui'); return; }
@@ -422,7 +425,10 @@ function handleSettingsClick(mx: number, my: number) {
     else state.showSaveInfo = !state.showSaveInfo;
     return;
   }
-  if (my >= CLOSE_Y() - 2) state.settings = false;
+  if (my >= CLOSE_Y() - 2) {
+    if (mx < SETT.x + 64) state.about = true;
+    else if (mx >= SETT.x + SETT.w - 50) state.settings = false;
+  }
 }
 function drawSettings(ctx: CanvasRenderingContext2D) {
   ctx.fillStyle = 'rgba(8,6,12,0.6)'; ctx.fillRect(0, 0, W, H);
@@ -449,7 +455,43 @@ function drawSettings(ctx: CanvasRenderingContext2D) {
   } else if (state.saveMsg && state.now < state.saveMsgUntil) {
     ctr(state.saveMsg, SETT.y + 126, P.verbHot);
   }
+  drawText(ctx, 'Acerca de', SETT.x + 8, CLOSE_Y(), P.verbIdle, 1, P.black, 1);
   drawText(ctx, 'Cerrar', SETT.x + SETT.w - 44, CLOSE_Y(), P.verbIdle, 1, P.black, 1);
+}
+
+// ---------------- about / legal ----------------
+const ABOUT = { x: 28, y: 14, w: 264, h: 178 };
+const ABOUT_LINES = [
+  'Un spin-off de fans de Monkey Island.',
+  '',
+  '(c) 2026 Angel Jaime Ruiz.',
+  'Todos los derechos reservados sobre el',
+  'código, el arte y la música originales.',
+  '',
+  'Juego de fans, por afición y sin ánimo',
+  'de lucro. NO es un producto oficial.',
+  '"Monkey Island", sus personajes y marcas',
+  'son propiedad de sus titulares',
+  '(Lucasfilm / Disney). Este juego no está',
+  'afiliado ni respaldado por ellos: es un',
+  'homenaje inspirado en su estilo.',
+];
+function handleAboutClick(mx: number, my: number) {
+  if (mx < ABOUT.x || mx > ABOUT.x + ABOUT.w || my < ABOUT.y || my > ABOUT.y + ABOUT.h) { state.about = false; return; }
+  if (my >= ABOUT.y + ABOUT.h - 15) state.about = false; // "Volver"
+}
+function drawAbout(ctx: CanvasRenderingContext2D) {
+  ctx.fillStyle = 'rgba(8,6,12,0.72)'; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = css(P.panelWood); ctx.fillRect(ABOUT.x, ABOUT.y, ABOUT.w, ABOUT.h);
+  ctx.fillStyle = css(P.panelWoodLit); ctx.fillRect(ABOUT.x, ABOUT.y, ABOUT.w, 1); ctx.fillRect(ABOUT.x, ABOUT.y, 1, ABOUT.h);
+  ctx.fillStyle = css(P.black); ctx.fillRect(ABOUT.x, ABOUT.y + ABOUT.h - 1, ABOUT.w, 1); ctx.fillRect(ABOUT.x + ABOUT.w - 1, ABOUT.y, 1, ABOUT.h);
+  const ctrA = (s: string, y: number, col: RGB) => { const w = textWidth(s, 1, 1); drawText(ctx, s, Math.round(ABOUT.x + ABOUT.w / 2 - w / 2), y, col, 1, P.black, 1); };
+  ctrA('EL SECRETO DE MONTJUÏC', ABOUT.y + 6, P.verbHot);
+  for (let i = 0; i < ABOUT_LINES.length; i++) {
+    const col = ABOUT_LINES[i].startsWith('(c)') ? P.inkLight : P.skin;
+    drawText(ctx, ABOUT_LINES[i], ABOUT.x + 9, ABOUT.y + 20 + i * 9, col, 1, P.black, 1);
+  }
+  ctrA('Volver', ABOUT.y + ABOUT.h - 11, P.verbHot);
 }
 
 // ---------------- loop ----------------
@@ -517,6 +559,7 @@ function frame(ts: number) {
   drawMusicIcon(ictx);
   drawGearIcon(ictx);
   if (state.settings) drawSettings(ictx);
+  if (state.about) drawAbout(ictx);
   if (state.ending) drawEnding(ictx);
 
   dctx.drawImage(internal, 0, 0);
