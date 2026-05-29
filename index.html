@@ -33,6 +33,15 @@
       #rotate .ico { font-size: 54px; margin-bottom: 18px; animation: rot 1.8s ease-in-out infinite; }
       #rotate .sub { font-size: 13px; opacity: 0.65; margin-top: 10px; }
       @keyframes rot { 0%, 45% { transform: rotate(0deg); } 65%, 100% { transform: rotate(90deg); } }
+      #pwahint {
+        position: fixed; left: 0; right: 0; top: 0; z-index: 20; display: none;
+        background: rgba(18, 14, 22, 0.95); color: #e8dcb0; border-bottom: 2px solid #5a4632;
+        font-family: 'Courier New', monospace; font-size: 12px; line-height: 1.45;
+        padding: 9px 40px 9px 12px; text-align: center;
+      }
+      #pwahint.show { display: block; }
+      #pwahint b { color: #f5c84a; }
+      #pwahint .x { position: absolute; right: 6px; top: 5px; padding: 3px 9px; font-size: 16px; cursor: pointer; color: #c9b88a; }
     </style>
   </head>
   <body>
@@ -43,6 +52,10 @@
       <div class="sub">El Secreto de Montjuïc</div>
     </div>
     <audio id="audiosink" playsinline></audio>
+    <div id="pwahint">
+      📲 Para <b>pantalla completa</b>: pulsa <b>Compartir</b> y «<b>Añadir a pantalla de inicio</b>», y abre el juego desde el icono.
+      <span class="x" id="pwahintx">✕</span>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

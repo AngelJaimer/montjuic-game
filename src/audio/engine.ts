@@ -11,6 +11,8 @@ let noise: AudioBuffer | null = null;
 let muted = false;
 let running = false;
 let timer: any = null;
+let sink: HTMLAudioElement | null = null;
+let loopStarted = false;
 
 let stepNo = 0;
 let nextTime = 0;
@@ -74,21 +76,36 @@ function makeImpulse(c: AudioContext): AudioBuffer {
   return b;
 }
 
+function begin() {
+  if (loopStarted || !ctx) return;
+  loopStarted = true;
+  nextTime = ctx.currentTime + 0.08;
+  stepNo = 0;
+  loop();
+}
+// Resume the context + (re)start the media element and scheduler. iOS frequently
+// needs this nudged more than once and only on a gesture, so it's retried.
+function wake() {
+  if (!ctx) return;
+  if (ctx.state !== 'running') { const r = ctx.resume(); if (r && r.then) r.then(begin).catch(() => {}); }
+  else begin();
+  if (sink) { const p = sink.play(); if (p && p.catch) p.catch(() => {}); }
+}
+
 export function start() {
   if (running) return;
   try {
     ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-    if (ctx.state === 'suspended') ctx.resume();
-    master = ctx.createGain(); master.gain.value = muted ? 0 : 0.34;
+    master = ctx.createGain();
+    master.gain.setValueAtTime(muted ? 0 : 0.34, ctx.currentTime); // setValueAtTime (not .value) so iOS applies it
     const comp = ctx.createDynamicsCompressor();
     const conv = ctx.createConvolver(); conv.buffer = makeImpulse(ctx);
-    wet = ctx.createGain(); wet.gain.value = 0.16;
+    wet = ctx.createGain(); wet.gain.setValueAtTime(0.16, ctx.currentTime);
     master.connect(comp);
     master.connect(wet); wet.connect(conv);
 
-    // On iOS, route output through a <audio> media element so the OS treats it as
-    // media playback (plays through the silent switch, uses media volume) instead of
-    // the ringer channel. Fall back to the speakers if that path isn't available.
+    // On iOS, route through a media element so the OS treats it as media playback
+    // (plays through the silent switch / media volume) instead of the ringer channel.
     const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && (navigator as any).maxTouchPoints > 1);
     const toSpeakers = () => { try { comp.connect(ctx!.destination); conv.connect(ctx!.destination); } catch (e) { /* ignore */ } };
     let routed = false;
@@ -96,22 +113,22 @@ export function start() {
       try {
         const sd = ctx.createMediaStreamDestination();
         comp.connect(sd); conv.connect(sd);
-        let el = document.getElementById('audiosink') as HTMLAudioElement;
-        if (!el) { el = new Audio(); el.id = 'audiosink'; document.body.appendChild(el); }
-        (el as any).playsInline = true; el.autoplay = true;
-        (el as any).srcObject = sd.stream;
-        const p = el.play();
-        if (p && p.catch) p.catch(() => toSpeakers());
+        sink = (document.getElementById('audiosink') as HTMLAudioElement) || new Audio();
+        if (!sink.id) sink.id = 'audiosink';
+        if (!sink.parentNode) document.body.appendChild(sink);
+        (sink as any).playsInline = true; sink.autoplay = true; (sink as any).srcObject = sd.stream;
         routed = true;
       } catch (e) { routed = false; }
     }
     if (!routed) toSpeakers();
 
     noise = makeNoise(ctx);
-    nextTime = ctx.currentTime + 0.1;
-    stepNo = 0;
     running = true;
-    loop();
+    loopStarted = false;
+    wake();
+    setTimeout(wake, 250);
+    setTimeout(wake, 800);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) wake(); });
   } catch (e) {
     running = false;
   }
@@ -197,6 +214,7 @@ export function setTheme(name: ThemeName) {
 export function toggleMute(): boolean {
   muted = !muted;
   if (master && ctx) master.gain.setTargetAtTime(muted ? 0 : 0.34, ctx.currentTime, 0.05);
+  if (!muted) wake();
   return muted;
 }
 export function isMuted(): boolean { return muted; }

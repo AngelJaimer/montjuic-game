@@ -36,6 +36,23 @@ window.addEventListener('orientationchange', fit);
 document.addEventListener('fullscreenchange', fit);
 fit();
 
+// iOS "Add to Home Screen" hint — shown only on Safari when not already standalone.
+const pwahint = document.getElementById('pwahint');
+{
+  const standalone = (navigator as any).standalone === true || matchMedia('(display-mode: standalone)').matches;
+  const ios = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  let dismissed = false;
+  try { dismissed = localStorage.getItem('montjuic_pwahint') === '1'; } catch (e) { /* ignore */ }
+  if (pwahint && ios && !standalone && !dismissed) {
+    pwahint.classList.add('show');
+    document.getElementById('pwahintx')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      pwahint.classList.remove('show');
+      try { localStorage.setItem('montjuic_pwahint', '1'); } catch (er) { /* ignore */ }
+    });
+  }
+}
+
 const internal = document.createElement('canvas');
 internal.width = W;
 internal.height = H;
@@ -144,6 +161,7 @@ display.addEventListener('pointerdown', (e) => {
 });
 
 function startGame() {
+  if (pwahint) pwahint.classList.remove('show');
   try { audio.start(); audio.setTheme(themeFor(currentRoom.id)); } catch (e) { /* ignore */ }
   if (isMobile) {
     const el: any = document.documentElement;
