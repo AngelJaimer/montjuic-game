@@ -37,6 +37,9 @@ export function buildSagradaScene(): HTMLCanvasElement {
   const ctx = cv.getContext('2d')!;
   ctx.imageSmoothingEnabled = false;
 
+  // base fill so there are NEVER transparent gaps behind the columns/scaffold
+  r(ctx, 0, 0, 320, 144, [150, 182, 208]);
+
   // bright work-day sky
   const img = ctx.createImageData(320, 44);
   const px = new Pixels(img, 320, 44);

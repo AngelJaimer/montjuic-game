@@ -38,13 +38,23 @@ export function drawSpeechLines(ctx: CanvasRenderingContext2D, lines: string[], 
   const lineH = 9;
   let top = headY - lines.length * lineH;
   if (top < 2) top = 2;
+  // position each line, then draw a subtle dark backing so speech stays legible
+  // on busy or same-tone backgrounds (e.g. tan text over tan buildings).
+  const xs: number[] = [];
+  let minX = W, maxX = 0;
   for (let i = 0; i < lines.length; i++) {
-    const ln = lines[i];
-    const w = textWidth(ln, 1, 1);
+    const w = textWidth(lines[i], 1, 1);
     let x = Math.round(cx - w / 2);
     if (x < 4) x = 4;
     if (x + w > W - 4) x = W - 4 - w;
-    drawText(ctx, ln, x, top + i * lineH, color, 1, SPEECH_SHADOW, 1);
+    xs.push(x);
+    if (x < minX) minX = x;
+    if (x + w > maxX) maxX = x + w;
+  }
+  ctx.fillStyle = 'rgba(8,6,12,0.5)';
+  ctx.fillRect(minX - 3, top - 2, (maxX - minX) + 6, lines.length * lineH + 3);
+  for (let i = 0; i < lines.length; i++) {
+    drawText(ctx, lines[i], xs[i], top + i * lineH, color, 1, SPEECH_SHADOW, 1);
   }
 }
 

@@ -382,6 +382,9 @@ export interface NPC {
   look: string;
   draw: (ctx: CanvasRenderingContext2D, fx: number, fy: number, facing: 'left' | 'right', t: number) => void;
   dialogue: Dialogue;
+  accepts?: Record<string, { needAlso?: string; missing?: string; line: string; give?: string; remove?: string[]; flag?: string; win?: boolean; card?: string[]; goto?: string }>;
+  hideIf?: string;
+  showIf?: string;
 }
 
 export const PORT_NPCS: NPC[] = [

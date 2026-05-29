@@ -581,6 +581,10 @@ function frame(ts: number) {
 
   if (!state.ending && !state.settings) update(dt);
 
+  // Clear the frame first: scene backgrounds may not cover every pixel, and
+  // without this, old text/sprites smear and stale scenery bleeds through.
+  ictx.fillStyle = css(P.black);
+  ictx.fillRect(0, 0, W, H);
   ictx.drawImage(bgCache[currentRoom.id], 0, 0);
   if (!currentRoom.bgImage) currentRoom.overlays?.(ictx, t);
   currentRoom.dynamic?.(ictx, state, t);
