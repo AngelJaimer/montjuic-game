@@ -1,0 +1,304 @@
+import { P, css, type RGB } from './palette';
+
+function px(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, c: RGB) {
+  ctx.fillStyle = css(c);
+  ctx.fillRect(x | 0, y | 0, w | 0, h | 0);
+}
+function blk(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, c: RGB, o: RGB = P.black) {
+  ctx.fillStyle = css(o);
+  ctx.fillRect(x | 0, y | 0, w | 0, h | 0);
+  ctx.fillStyle = css(c);
+  ctx.fillRect((x | 0) + 1, (y | 0) + 1, Math.max(0, (w | 0) - 2), Math.max(0, (h | 0) - 2));
+}
+
+// Guybrush, ~50px tall. (fx,fy) = feet centre. Mirrors for left-facing; legs/arms
+// swing while moving; subtle idle breathing otherwise.
+export function drawActor(
+  ctx: CanvasRenderingContext2D,
+  fx: number,
+  fy: number,
+  facing: 'left' | 'right' = 'right',
+  moving = false,
+  t = 0,
+  idleBob = 0,
+) {
+  const cx = Math.round(fx);
+  const fyR = Math.round(fy);
+  ctx.save();
+  if (facing === 'left') {
+    ctx.translate(cx * 2, 0);
+    ctx.scale(-1, 1);
+  }
+
+  const swing = moving ? Math.round(Math.sin(t * 11) * 2) : 0;
+  const aswing = moving ? Math.round(Math.sin(t * 11) * 1.5) : 0;
+  const bob = moving ? (Math.sin(t * 11) > 0 ? 1 : 0) : Math.round(idleBob);
+
+  // legs + boots
+  blk(ctx, cx - 6 + swing, fyR - 20, 5, 16, P.pants);
+  blk(ctx, cx + 1 - swing, fyR - 20, 5, 16, P.pants);
+  px(ctx, cx - 5 + swing, fyR - 19, 2, 14, P.pantsShadow);
+  px(ctx, cx + 2 - swing, fyR - 19, 2, 14, P.pantsShadow);
+  blk(ctx, cx - 7 + swing, fyR - 5, 7, 5, P.boots);
+  blk(ctx, cx + 0 - swing, fyR - 5, 7, 5, P.boots);
+
+  // sword hilt
+  px(ctx, cx + 6, fyR - 22 + bob, 2, 7, P.belt);
+  px(ctx, cx + 5, fyR - 23 + bob, 4, 2, P.stoneShadow);
+
+  // torso (puffy shirt)
+  const ty = fyR - 38 + bob;
+  blk(ctx, cx - 7, ty, 14, 19, P.shirt);
+  px(ctx, cx - 6, ty + 1, 3, 17, P.shirtShadow);
+  px(ctx, cx + 4, ty + 1, 2, 17, P.shirtShadow);
+  px(ctx, cx - 7, ty + 16, 14, 2, P.belt);
+
+  // arms
+  blk(ctx, cx - 10, ty + 2 + aswing, 4, 13, P.shirt);
+  blk(ctx, cx + 6, ty + 2 - aswing, 4, 13, P.shirt);
+  px(ctx, cx - 10, ty + 13 + aswing, 4, 3, P.skin);
+  px(ctx, cx + 6, ty + 13 - aswing, 4, 3, P.skin);
+
+  // neck + head
+  px(ctx, cx - 2, ty - 2, 4, 3, P.skin);
+  const hy = fyR - 50 + bob;
+  blk(ctx, cx - 5, hy, 10, 11, P.skin);
+  px(ctx, cx - 4, hy + 1, 3, 9, P.skinShadow);
+  px(ctx, cx - 5, hy - 1, 11, 3, P.hair);
+  px(ctx, cx - 6, hy, 3, 7, P.hair);
+  px(ctx, cx - 6, hy - 1, 4, 2, P.hairShadow);
+  px(ctx, cx + 1, hy + 4, 1, 2, P.black);
+  px(ctx, cx + 4, hy + 5, 1, 2, P.skin);
+  px(ctx, cx + 1, hy + 8, 3, 1, P.skinShadow);
+
+  ctx.restore();
+}
+
+const COAT: RGB = [44, 54, 92];
+const COAT_LIT: RGB = [64, 76, 120];
+const TROUSER: RGB = [54, 50, 64];
+const GOLD: RGB = [228, 188, 96];
+const GREY: RGB = [186, 184, 172];
+
+// El Aduanero — stout, grumpy customs officer with a tricorn and big moustache.
+export function drawAduanero(ctx: CanvasRenderingContext2D, fx: number, fy: number, facing: 'left' | 'right' = 'left', t = 0) {
+  const cx = Math.round(fx);
+  const fyR = Math.round(fy);
+  const bob = Math.sin(t * 1.6) > 0.96 ? 1 : 0; // the odd snore
+  ctx.save();
+  if (facing === 'left') { ctx.translate(cx * 2, 0); ctx.scale(-1, 1); }
+
+  // stubby legs + shoes
+  blk(ctx, cx - 7, fyR - 16, 6, 14, TROUSER);
+  blk(ctx, cx + 1, fyR - 16, 6, 14, TROUSER);
+  blk(ctx, cx - 8, fyR - 4, 8, 4, P.black);
+  blk(ctx, cx + 0, fyR - 4, 8, 4, P.black);
+
+  // broad coat
+  const ty = fyR - 34 + bob;
+  blk(ctx, cx - 9, ty, 18, 20, COAT);
+  px(ctx, cx + 3, ty + 1, 5, 18, COAT_LIT);
+  px(ctx, cx - 8, ty + 1, 3, 18, P.black);
+  // gold buttons + trim
+  for (let i = 0; i < 4; i++) px(ctx, cx - 1, ty + 3 + i * 4, 2, 2, GOLD);
+  px(ctx, cx - 9, ty + 19, 18, 2, GOLD);
+  // crossed arms
+  px(ctx, cx - 8, ty + 7, 16, 4, COAT_LIT);
+  px(ctx, cx - 8, ty + 7, 16, 1, P.black);
+  px(ctx, cx - 5, ty + 9, 3, 2, P.skin);
+  px(ctx, cx + 3, ty + 9, 3, 2, P.skin);
+
+  // head
+  const hy = fyR - 44 + bob;
+  blk(ctx, cx - 5, hy, 11, 11, P.skin);
+  px(ctx, cx - 4, hy + 1, 3, 9, P.skinShadow);
+  // moustache + stern eyes
+  px(ctx, cx - 4, hy + 7, 10, 2, GREY);
+  px(ctx, cx - 3, hy + 9, 2, 1, GREY);
+  px(ctx, cx + 3, hy + 9, 2, 1, GREY);
+  px(ctx, cx - 2, hy + 4, 2, 1, P.black);
+  px(ctx, cx + 3, hy + 4, 2, 1, P.black);
+  // tricorn hat
+  blk(ctx, cx - 8, hy - 3, 17, 4, P.black);
+  px(ctx, cx - 3, hy - 5, 7, 3, COAT);
+  px(ctx, cx - 8, hy, 17, 1, COAT_LIT);
+
+  ctx.restore();
+}
+
+const STAN_JACKET: RGB = [60, 150, 138];
+const STAN_STRIPE: RGB = [212, 168, 72];
+const STAN_PANTS: RGB = [120, 60, 60];
+
+// Stan — tall, lanky used-boat salesman in a very loud striped jacket, mid-pitch.
+export function drawStan(ctx: CanvasRenderingContext2D, fx: number, fy: number, facing: 'left' | 'right' = 'left', t = 0) {
+  const cx = Math.round(fx);
+  const fyR = Math.round(fy);
+  const gesture = Math.round(Math.sin(t * 4) * 2); // never stops gesturing
+  ctx.save();
+  if (facing === 'left') { ctx.translate(cx * 2, 0); ctx.scale(-1, 1); }
+
+  // long legs
+  blk(ctx, cx - 5, fyR - 22, 4, 18, STAN_PANTS);
+  blk(ctx, cx + 1, fyR - 22, 4, 18, STAN_PANTS);
+  blk(ctx, cx - 6, fyR - 5, 6, 5, P.black);
+  blk(ctx, cx + 0, fyR - 5, 6, 5, P.black);
+
+  // loud striped jacket
+  const ty = fyR - 40;
+  blk(ctx, cx - 7, ty, 14, 20, STAN_JACKET);
+  for (let i = 0; i < 4; i++) px(ctx, cx - 6 + i * 4, ty + 1, 1, 18, STAN_STRIPE);
+  // white shirt + collar
+  px(ctx, cx - 2, ty + 1, 4, 12, P.shirt);
+  px(ctx, cx - 2, ty, 2, 3, P.shirt);
+  px(ctx, cx + 0, ty, 2, 3, P.shirt);
+  // one arm raised mid-pitch, one on hip
+  blk(ctx, cx + 6, ty - 4 + gesture, 4, 12, STAN_JACKET);
+  px(ctx, cx + 6, ty - 5 + gesture, 4, 3, P.skin);
+  blk(ctx, cx - 10, ty + 4, 4, 11, STAN_JACKET);
+  px(ctx, cx - 10, ty + 13, 4, 3, P.skin);
+
+  // head + big grin
+  px(ctx, cx - 2, ty - 2, 4, 3, P.skin);
+  const hy = fyR - 52;
+  blk(ctx, cx - 5, hy, 10, 11, P.skin);
+  px(ctx, cx - 4, hy + 1, 3, 9, P.skinShadow);
+  // slicked dark hair
+  px(ctx, cx - 5, hy - 1, 11, 2, P.woodDark);
+  px(ctx, cx - 5, hy, 2, 4, P.woodDark);
+  // eyes + toothy grin
+  px(ctx, cx + 1, hy + 4, 1, 2, P.black);
+  px(ctx, cx + 4, hy + 4, 1, 2, P.black);
+  px(ctx, cx + 1, hy + 8, 5, 2, P.shirt);
+  px(ctx, cx + 2, hy + 8, 1, 2, P.skinShadow);
+  px(ctx, cx + 4, hy + 8, 1, 2, P.skinShadow);
+
+  ctx.restore();
+}
+
+const APRON: RGB = [222, 212, 188];
+const CAP: RGB = [238, 234, 222];
+
+// El Churrero — cook in an apron, both arms up holding his awning.
+export function drawChurrero(ctx: CanvasRenderingContext2D, fx: number, fy: number, facing: 'left' | 'right' = 'left', t = 0) {
+  const cx = Math.round(fx);
+  const fyR = Math.round(fy);
+  const sway = Math.round(Math.sin(t * 2) * 1);
+  ctx.save();
+  if (facing === 'left') { ctx.translate(cx * 2, 0); ctx.scale(-1, 1); }
+
+  blk(ctx, cx - 6, fyR - 18, 5, 16, P.woodDark);
+  blk(ctx, cx + 1, fyR - 18, 5, 16, P.woodDark);
+  blk(ctx, cx - 7, fyR - 4, 7, 4, P.black);
+  blk(ctx, cx + 0, fyR - 4, 7, 4, P.black);
+
+  const ty = fyR - 36;
+  blk(ctx, cx - 7, ty, 14, 20, P.shirt);
+  px(ctx, cx - 6, ty + 6, 12, 13, APRON);
+  px(ctx, cx - 6, ty + 6, 12, 1, P.wallShadow);
+  // arms raised
+  blk(ctx, cx - 10, ty - 6 + sway, 4, 12, P.shirt);
+  px(ctx, cx - 10, ty - 7 + sway, 4, 3, P.skin);
+  blk(ctx, cx + 6, ty - 6 - sway, 4, 12, P.shirt);
+  px(ctx, cx + 6, ty - 7 - sway, 4, 3, P.skin);
+
+  const hy = fyR - 48;
+  blk(ctx, cx - 5, hy, 10, 11, P.skin);
+  px(ctx, cx - 4, hy + 1, 3, 9, P.skinShadow);
+  px(ctx, cx - 5, hy - 2, 11, 3, CAP);
+  px(ctx, cx - 5, hy - 2, 11, 1, P.wallShadow);
+  px(ctx, cx - 3, hy + 7, 8, 1, P.woodDark);
+  px(ctx, cx - 2, hy + 4, 1, 2, P.black);
+  px(ctx, cx + 3, hy + 4, 1, 2, P.black);
+
+  ctx.restore();
+}
+
+const SCARF: RGB = [180, 70, 66];
+const SKIRT: RGB = [120, 60, 80];
+const BLOUSE: RGB = [226, 210, 180];
+
+// La Chocolatera — vendor in headscarf and long skirt, stirring her pot.
+export function drawChocolatera(ctx: CanvasRenderingContext2D, fx: number, fy: number, facing: 'left' | 'right' = 'left', t = 0) {
+  const cx = Math.round(fx);
+  const fyR = Math.round(fy);
+  const stir = Math.round(Math.sin(t * 5) * 2);
+  ctx.save();
+  if (facing === 'left') { ctx.translate(cx * 2, 0); ctx.scale(-1, 1); }
+
+  blk(ctx, cx - 4, fyR - 4, 4, 4, P.black);
+  blk(ctx, cx + 0, fyR - 4, 4, 4, P.black);
+  // skirt
+  ctx.fillStyle = css(SKIRT);
+  ctx.beginPath();
+  ctx.moveTo(cx - 5, fyR - 20); ctx.lineTo(cx + 5, fyR - 20); ctx.lineTo(cx + 8, fyR - 3); ctx.lineTo(cx - 8, fyR - 3);
+  ctx.closePath(); ctx.fill();
+
+  const ty = fyR - 34;
+  blk(ctx, cx - 6, ty, 12, 16, BLOUSE);
+  px(ctx, cx - 4, ty + 6, 8, 9, P.cloud); // apron
+  // arms (one stirring)
+  blk(ctx, cx + 5, ty + 3, 4, 11, BLOUSE);
+  px(ctx, cx + 5 + stir, ty + 12, 3, 3, P.skin);
+  blk(ctx, cx - 9, ty + 3, 4, 10, BLOUSE);
+  px(ctx, cx - 9, ty + 12, 3, 3, P.skin);
+
+  const hy = fyR - 44;
+  blk(ctx, cx - 5, hy, 10, 11, P.skin);
+  px(ctx, cx - 4, hy + 1, 3, 9, P.skinShadow);
+  px(ctx, cx - 6, hy - 2, 12, 5, SCARF);
+  px(ctx, cx - 6, hy - 2, 12, 1, [140, 50, 48]);
+  px(ctx, cx - 6, hy + 2, 2, 5, SCARF);
+  px(ctx, cx + 4, hy + 2, 2, 5, SCARF);
+  px(ctx, cx - 1, hy + 4, 1, 2, P.black);
+  px(ctx, cx + 3, hy + 4, 1, 2, P.black);
+  px(ctx, cx + 0, hy + 8, 3, 1, P.skinShadow);
+
+  ctx.restore();
+}
+
+const STEEL: RGB = [150, 156, 168];
+const STEEL_D: RGB = [96, 102, 116];
+const STEEL_L: RGB = [200, 205, 215];
+const TUNIC: RGB = [150, 60, 56];
+
+// La Guàrdia — steel-breastplated soldier with a pike, blocking the gate.
+export function drawGuard(ctx: CanvasRenderingContext2D, fx: number, fy: number, facing: 'left' | 'right' = 'left', t = 0) {
+  const cx = Math.round(fx);
+  const fyR = Math.round(fy);
+  ctx.save();
+  if (facing === 'left') { ctx.translate(cx * 2, 0); ctx.scale(-1, 1); }
+
+  blk(ctx, cx - 6, fyR - 18, 5, 16, STEEL_D);
+  blk(ctx, cx + 1, fyR - 18, 5, 16, STEEL_D);
+  blk(ctx, cx - 7, fyR - 4, 7, 4, P.black);
+  blk(ctx, cx + 0, fyR - 4, 7, 4, P.black);
+
+  const ty = fyR - 36;
+  blk(ctx, cx - 7, ty, 14, 20, TUNIC);
+  px(ctx, cx - 6, ty + 1, 12, 12, STEEL);
+  px(ctx, cx - 6, ty + 1, 12, 1, STEEL_L);
+  px(ctx, cx - 1, ty + 2, 2, 10, STEEL_D);
+  // arms
+  blk(ctx, cx - 10, ty + 3, 4, 13, TUNIC);
+  px(ctx, cx - 10, ty + 13, 4, 3, P.skin);
+  blk(ctx, cx + 6, ty + 3, 4, 13, TUNIC);
+  px(ctx, cx + 6, ty + 13, 4, 3, P.skin);
+  // pike
+  px(ctx, cx + 9, fyR - 52, 1, 46, P.woodDark);
+  px(ctx, cx + 8, fyR - 53, 3, 5, STEEL);
+
+  const hy = fyR - 48;
+  blk(ctx, cx - 5, hy, 10, 11, P.skin);
+  px(ctx, cx - 4, hy + 1, 3, 9, P.skinShadow);
+  // morrión helmet (stepped peak)
+  px(ctx, cx - 5, hy - 1, 11, 2, STEEL);
+  px(ctx, cx - 5, hy - 1, 11, 1, STEEL_L);
+  px(ctx, cx - 3, hy - 3, 7, 2, STEEL);
+  px(ctx, cx - 1, hy - 5, 3, 2, STEEL);
+  px(ctx, cx - 2, hy + 4, 1, 2, P.black);
+  px(ctx, cx + 3, hy + 4, 1, 2, P.black);
+  px(ctx, cx - 2, hy + 7, 7, 1, P.woodDark);
+
+  ctx.restore();
+}
