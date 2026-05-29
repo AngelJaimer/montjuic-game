@@ -100,6 +100,63 @@ export const ITEMS: Record<string, { name: string; draw: Draw }> = {
       ctx.fillStyle = css(P.stoneShadow); ctx.fillRect(x + 5, y + 7, 1, 2);
     },
   },
+  ajos: {
+    name: 'la ristra de ajos',
+    draw: (ctx, x, y) => {
+      ctx.strokeStyle = css([182, 172, 122]); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(x + 10, y + 3); ctx.lineTo(x + 10, y + 16); ctx.stroke();
+      const bulbs: [number, number][] = [[8, 6], [12, 8], [7, 11], [12, 13], [10, 16]];
+      ctx.fillStyle = css([234, 228, 208]);
+      for (const [bx, by] of bulbs) { ctx.beginPath(); ctx.ellipse(x + bx, y + by, 3, 4, 0, 0, Math.PI * 2); ctx.fill(); }
+      ctx.fillStyle = css([198, 192, 168]);
+      for (const [bx, by] of bulbs) ctx.fillRect(x + bx - 1, y + by - 2, 1, 3);
+    },
+  },
+  tonico: {
+    name: 'el tónico',
+    draw: (ctx, x, y) => {
+      ctx.fillStyle = css([120, 90, 60]); ctx.fillRect(x + 9, y + 3, 3, 3);   // cork
+      ctx.fillStyle = css([204, 214, 224]);                                   // glass
+      ctx.beginPath(); ctx.moveTo(x + 9, y + 6); ctx.lineTo(x + 12, y + 6); ctx.lineTo(x + 14, y + 17); ctx.lineTo(x + 7, y + 17); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = css([120, 80, 200]);                                    // potion
+      ctx.beginPath(); ctx.moveTo(x + 8, y + 11); ctx.lineTo(x + 13, y + 11); ctx.lineTo(x + 14, y + 17); ctx.lineTo(x + 7, y + 17); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = css([206, 184, 255]); ctx.fillRect(x + 9, y + 13, 1, 1);
+    },
+  },
+  clau2: {
+    name: 'la segunda clave',
+    draw: (ctx, x, y) => {
+      const steel: RGB = [180, 186, 196];
+      ctx.strokeStyle = css(steel); ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(x + 6, y + 8, 3, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = css(steel);
+      ctx.fillRect(x + 8, y + 7, 9, 2);
+      ctx.fillRect(x + 15, y + 9, 2, 3); ctx.fillRect(x + 12, y + 9, 2, 2);
+      ctx.fillStyle = css([120, 126, 136]); ctx.fillRect(x + 5, y + 7, 1, 2);
+    },
+  },
+  planos: {
+    name: 'los planos',
+    draw: (ctx, x, y) => {
+      ctx.fillStyle = css([90, 120, 170]); ctx.fillRect(x + 4, y + 5, 12, 11);  // rolled blueprint
+      ctx.fillStyle = css([130, 160, 205]); ctx.fillRect(x + 4, y + 5, 12, 2);
+      ctx.fillStyle = css([70, 96, 140]); ctx.fillRect(x + 3, y + 4, 2, 13); ctx.fillRect(x + 15, y + 4, 2, 13);
+      ctx.fillStyle = css([200, 215, 235]);
+      ctx.fillRect(x + 7, y + 8, 6, 1); ctx.fillRect(x + 7, y + 11, 4, 1); ctx.fillRect(x + 9, y + 8, 1, 5);
+    },
+  },
+  clau3: {
+    name: 'la tercera clave',
+    draw: (ctx, x, y) => {
+      const bronze: RGB = [184, 134, 74];
+      ctx.strokeStyle = css(bronze); ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(x + 6, y + 8, 3, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = css(bronze);
+      ctx.fillRect(x + 8, y + 7, 9, 2);
+      ctx.fillRect(x + 15, y + 9, 2, 3); ctx.fillRect(x + 12, y + 9, 2, 2);
+      ctx.fillStyle = css([130, 92, 48]); ctx.fillRect(x + 5, y + 7, 1, 2);
+    },
+  },
 };
 
 export function makeItem(id: string) {

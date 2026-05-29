@@ -210,3 +210,100 @@ export const FLORISTA_DIALOGUE: Dialogue = {
     options: [{ text: '(Salir)', to: 'end' }],
   },
 };
+
+// ---------- Episode 2: El Born ----------
+export const VIDENTE_DIALOGUE: Dialogue = {
+  start: {
+    npc: 'Aaah... te esperaba, pirata. Las conchas me hablaron de ti. (En realidad te he visto venir por la calle, pero queda mejor así.)',
+    options: [
+      { text: 'Necesito la llave que guarda el ferrer.', to: 'llave' },
+      { text: '¿Me lees el futuro?', to: 'futuro' },
+      { text: '¿Quién eres?', to: 'quien', once: true },
+      { text: 'Adiós, vidente. (Salir)', to: 'end' },
+    ],
+  },
+  llave: {
+    npc: 'El ferrer no suelta esa llave ni dormido. ...Dormido. Mmm. Puedo prepararte un tónico que tumbaría a un buey. Pero me falta un ingrediente con carácter: tráeme una ristra de ajos del Born.',
+    options: [
+      { text: '¿Ajos? ¿En una poción mágica?', to: 'ajos' },
+      { text: 'Voy a por los ajos.', to: 'end', set: 'goal_ajos' },
+    ],
+  },
+  ajos: {
+    npc: 'El ajo espanta a los malos espíritus y, de paso, sazona. No preguntes más y tráemelos.',
+    options: [{ text: 'Está bien, está bien.', to: 'end', set: 'goal_ajos' }],
+  },
+  futuro: {
+    npc: 'Veo... veo... una llave, una catedral junto al mar, y a ti metiéndote en un buen lío. Como siempre.',
+    options: [{ text: 'Tranquilizador, gracias.', to: 'end' }],
+  },
+  quien: {
+    npc: 'Soy la Vidente del Born. Leo el porvenir, vendo amuletos y, los martes, hago un fricandó excelente.',
+    options: [{ text: 'Encantado.', to: 'start' }, { text: '(Salir)', to: 'end' }],
+  },
+};
+
+export const FERRER_DIALOGUE: Dialogue = {
+  start: {
+    npc: '(CLANG CLANG) ¿Eh? ¿Qué quieres? ¡Habla fuerte, que el martillo no me deja oír!',
+    options: [
+      { text: '¡Quiero esa llave!', to: 'llave' },
+      { text: '¿Qué forjas?', to: 'forja' },
+      { text: 'Nada. (Salir)', to: 'end' },
+    ],
+  },
+  llave: {
+    npc: '¿Esta? ¡Mi obra maestra! No la vendo ni por todo el oro de Montjuïc. Y ahora aparta, que con esta sed de mil demonios no estoy de humor.',
+    options: [
+      { text: '¿Tienes sed?', to: 'sed' },
+      { text: 'Lo entiendo. (Salir)', to: 'end' },
+    ],
+  },
+  sed: {
+    npc: '¡Llevo horas dándole al martillo! Tráeme algo fresco para beber y serás mi pirata favorito. Pero la llave, ni la mires.',
+    options: [{ text: 'Veré qué encuentro.', to: 'end' }],
+  },
+  forja: {
+    npc: 'Llaves, rejas, espadas y, cuando nadie mira, figuritas de gatos. No se lo cuentes a nadie.',
+    options: [{ text: 'Tu secreto está a salvo.', to: 'end' }],
+  },
+};
+
+// ---------- Episode 2: Sagrada Família (la primera piedra) ----------
+export const ARQUITECTO_DIALOGUE: Dialogue = {
+  start: {
+    npc: '¡No, no, NO! ¿Dónde están mis planos? ¡Sin ellos no se coloca ni una piedra más! (Y aún quedan... ¿ciento cincuenta años de obra? Por lo menos.)',
+    options: [
+      { text: '¿Has perdido los planos?', to: 'planos' },
+      { text: 'Quiero la llave de la primera piedra.', to: 'llave' },
+      { text: '¿Qué estás construyendo?', to: 'obra' },
+      { text: 'Suerte con eso. (Salir)', to: 'end' },
+    ],
+  },
+  planos: {
+    npc: '¡Se los llevó el viento! Andarán por el andamio. Tráemelos y hasta te esculpiré una estatua. De piedra, claro, que es lo único que me sobra.',
+    options: [{ text: 'Los buscaré.', to: 'end', set: 'goal_planos' }],
+  },
+  llave: {
+    npc: '¿La llave de la primera piedra? ¡Es ceremonial! ¡Sagrada! Nadie la toca mientras yo monte guardia. Y pienso montar guardia un siglo o dos.',
+    options: [{ text: 'Ya veo...', to: 'end' }],
+  },
+  obra: {
+    npc: 'Un templo que rozará el cielo. Sin una sola línea recta: la recta es cosa de hombres, y yo construyo para Dios... y para los guiris que vendrán en autocar.',
+    options: [{ text: 'Ambicioso.', to: 'end' }],
+  },
+};
+
+export const MASON_DIALOGUE: Dialogue = {
+  start: {
+    npc: 'Pesa lo suyo, esta piedra. ¿Ayudas o solo miras, pirata?',
+    options: [
+      { text: '¿Por qué no avanza la obra?', to: 'obra' },
+      { text: 'Solo miro, gracias. (Salir)', to: 'end' },
+    ],
+  },
+  obra: {
+    npc: 'El jefe ha perdido los planos y se ha bloqueado. Sin él dándonos la brasa, nadie se acerca a la primera piedra. Devuélvele los papeles y se irá a su rincón a dibujar, ya verás.',
+    options: [{ text: 'Gracias por el dato.', to: 'end' }],
+  },
+};

@@ -407,3 +407,178 @@ export function drawFlorista(ctx: CanvasRenderingContext2D, fx: number, fy: numb
   px(ctx, cx + 0, hy + 8, 3, 1, P.skinShadow);
   ctx.restore();
 }
+
+const ROBE: RGB = [98, 70, 132];
+const ROBE_L: RGB = [126, 96, 162];
+const SHAWL: RGB = [182, 80, 92];
+const GEMGOLD: RGB = [228, 188, 96];
+
+// La Vidente del Born — robed fortune-teller in a gemmed headscarf.
+export function drawVidente(ctx: CanvasRenderingContext2D, fx: number, fy: number, facing: 'left' | 'right' = 'right', t = 0) {
+  const cx = Math.round(fx);
+  const fyR = Math.round(fy);
+  ctx.save();
+  if (facing === 'left') { ctx.translate(cx * 2, 0); ctx.scale(-1, 1); }
+  // long robe
+  ctx.fillStyle = css(ROBE);
+  ctx.beginPath();
+  ctx.moveTo(cx - 6, fyR - 30); ctx.lineTo(cx + 6, fyR - 30); ctx.lineTo(cx + 10, fyR - 2); ctx.lineTo(cx - 10, fyR - 2);
+  ctx.closePath(); ctx.fill();
+  px(ctx, cx - 4, fyR - 28, 2, 26, ROBE_L);
+  px(ctx, cx + 2, fyR - 28, 2, 26, ROBE_L);
+  // shawl + draped arms
+  px(ctx, cx - 9, fyR - 33, 18, 7, SHAWL);
+  blk(ctx, cx - 10, fyR - 28, 3, 13, ROBE);
+  blk(ctx, cx + 7, fyR - 28, 3, 13, ROBE);
+  px(ctx, cx - 10, fyR - 16, 3, 3, P.skin);
+  px(ctx, cx + 7, fyR - 16, 3, 3, P.skin);
+  // head + gemmed scarf + hoop earrings
+  const hy = fyR - 45;
+  blk(ctx, cx - 5, hy, 10, 11, P.skin);
+  px(ctx, cx - 4, hy + 1, 3, 9, P.skinShadow);
+  px(ctx, cx - 6, hy - 2, 12, 5, SHAWL);
+  px(ctx, cx - 1, hy - 1, 2, 2, GEMGOLD);
+  px(ctx, cx - 6, hy + 6, 1, 3, GEMGOLD);
+  px(ctx, cx + 5, hy + 6, 1, 3, GEMGOLD);
+  px(ctx, cx + 1, hy + 4, 1, 2, P.black);
+  px(ctx, cx + 3, hy + 4, 1, 2, P.black);
+  ctx.restore();
+}
+
+const APRON2: RGB = [112, 74, 46];
+const APRON2_D: RGB = [82, 52, 30];
+const HAMMER: RGB = [96, 100, 110];
+
+// El Ferrer — burly blacksmith in a leather apron, hammer swinging.
+export function drawFerrer(ctx: CanvasRenderingContext2D, fx: number, fy: number, facing: 'left' | 'right' = 'left', t = 0) {
+  const cx = Math.round(fx);
+  const fyR = Math.round(fy);
+  const swing = Math.round((Math.sin(t * 6) * 0.5 + 0.5) * 4);
+  ctx.save();
+  if (facing === 'left') { ctx.translate(cx * 2, 0); ctx.scale(-1, 1); }
+  blk(ctx, cx - 6, fyR - 18, 5, 16, [70, 60, 52]);
+  blk(ctx, cx + 1, fyR - 18, 5, 16, [70, 60, 52]);
+  blk(ctx, cx - 7, fyR - 4, 7, 4, P.black);
+  blk(ctx, cx + 0, fyR - 4, 7, 4, P.black);
+  // broad bare torso + leather apron
+  const ty = fyR - 36;
+  blk(ctx, cx - 8, ty, 16, 20, P.skin);
+  px(ctx, cx - 7, ty + 1, 3, 18, P.skinShadow);
+  px(ctx, cx - 5, ty + 4, 11, 15, APRON2);
+  px(ctx, cx - 5, ty + 4, 11, 1, APRON2_D);
+  // left arm at side
+  blk(ctx, cx - 11, ty + 3, 4, 12, P.skin);
+  px(ctx, cx - 11, ty + 12, 4, 3, P.skin);
+  // right arm raised, hammering
+  blk(ctx, cx + 7, ty - 3 - swing, 4, 12, P.skin);
+  px(ctx, cx + 6, ty - 7 - swing, 6, 4, HAMMER);   // hammer head
+  px(ctx, cx + 8, ty - 4 - swing, 2, 5, P.woodDark); // handle
+  // head + sooty hair + beard
+  const hy = fyR - 46;
+  blk(ctx, cx - 5, hy, 10, 11, P.skin);
+  px(ctx, cx - 4, hy + 1, 3, 9, P.skinShadow);
+  px(ctx, cx - 5, hy - 1, 11, 2, [80, 62, 46]);
+  px(ctx, cx - 5, hy + 7, 10, 3, [92, 72, 52]);   // beard
+  px(ctx, cx - 2, hy + 4, 1, 2, P.black);
+  px(ctx, cx + 3, hy + 4, 1, 2, P.black);
+  ctx.restore();
+}
+
+const COAT2: RGB = [88, 76, 66];
+const COAT2_L: RGB = [112, 98, 84];
+const BEARD: RGB = [212, 208, 198];
+
+// El Arquitecto — a Gaudí-esque figure: frock coat, full beard, wide-brim hat, rolled plans.
+export function drawArquitecto(ctx: CanvasRenderingContext2D, fx: number, fy: number, facing: 'left' | 'right' = 'left', t = 0) {
+  const cx = Math.round(fx);
+  const fyR = Math.round(fy);
+  ctx.save();
+  if (facing === 'left') { ctx.translate(cx * 2, 0); ctx.scale(-1, 1); }
+  blk(ctx, cx - 5, fyR - 19, 4, 17, [64, 58, 52]);
+  blk(ctx, cx + 1, fyR - 19, 4, 17, [64, 58, 52]);
+  blk(ctx, cx - 6, fyR - 4, 6, 4, P.black);
+  blk(ctx, cx + 0, fyR - 4, 6, 4, P.black);
+  const ty = fyR - 37;
+  blk(ctx, cx - 6, ty, 12, 22, COAT2);
+  px(ctx, cx - 5, ty + 1, 3, 20, COAT2_L);
+  px(ctx, cx - 1, ty + 2, 1, 18, [58, 50, 44]); // button line
+  blk(ctx, cx - 9, ty + 3, 3, 13, COAT2);
+  px(ctx, cx - 9, ty + 13, 3, 3, P.skin);
+  blk(ctx, cx + 6, ty + 3, 3, 13, COAT2);
+  px(ctx, cx + 6, ty + 13, 3, 3, P.skin);
+  px(ctx, cx + 5, ty + 9, 3, 8, [120, 150, 200]); // rolled blue plans in hand
+  const hy = fyR - 48;
+  blk(ctx, cx - 4, hy, 9, 11, P.skin);
+  px(ctx, cx - 3, hy + 1, 3, 9, P.skinShadow);
+  px(ctx, cx - 4, hy + 7, 9, 4, BEARD);
+  px(ctx, cx - 1, hy + 5, 1, 2, P.black);
+  px(ctx, cx + 3, hy + 5, 1, 2, P.black);
+  px(ctx, cx - 7, hy - 1, 15, 2, [50, 44, 40]); // wide brim
+  px(ctx, cx - 4, hy - 5, 9, 4, [50, 44, 40]);  // crown
+  ctx.restore();
+}
+
+// El Mason — a dusty stonemason with a flat cap and a trowel.
+export function drawMason(ctx: CanvasRenderingContext2D, fx: number, fy: number, facing: 'right' | 'left' = 'right', t = 0) {
+  const cx = Math.round(fx);
+  const fyR = Math.round(fy);
+  ctx.save();
+  if (facing === 'left') { ctx.translate(cx * 2, 0); ctx.scale(-1, 1); }
+  blk(ctx, cx - 5, fyR - 18, 4, 16, [92, 82, 70]);
+  blk(ctx, cx + 1, fyR - 18, 4, 16, [92, 82, 70]);
+  blk(ctx, cx - 6, fyR - 4, 6, 4, P.black);
+  blk(ctx, cx + 0, fyR - 4, 6, 4, P.black);
+  const ty = fyR - 34;
+  blk(ctx, cx - 6, ty, 12, 18, [152, 140, 122]);
+  px(ctx, cx - 5, ty + 1, 3, 16, [122, 110, 94]);
+  blk(ctx, cx - 9, ty + 3, 3, 12, [152, 140, 122]);
+  px(ctx, cx - 9, ty + 12, 3, 3, P.skin);
+  blk(ctx, cx + 6, ty + 3, 3, 12, [152, 140, 122]);
+  px(ctx, cx + 6, ty + 12, 3, 3, P.skin);
+  px(ctx, cx + 9, ty + 12, 4, 3, [156, 156, 166]); // trowel
+  const hy = fyR - 44;
+  blk(ctx, cx - 4, hy, 9, 10, P.skin);
+  px(ctx, cx - 3, hy + 1, 3, 8, P.skinShadow);
+  px(ctx, cx - 5, hy - 2, 11, 3, [112, 92, 72]);
+  px(ctx, cx + 4, hy - 1, 3, 2, [112, 92, 72]); // cap peak
+  px(ctx, cx - 1, hy + 4, 1, 2, P.black);
+  px(ctx, cx + 3, hy + 4, 1, 2, P.black);
+  ctx.restore();
+}
+
+const LE_COAT: RGB = [84, 40, 50];
+const LE_COAT_L: RGB = [112, 56, 66];
+const LE_SKIN: RGB = [150, 182, 158];
+const LE_SKIN_D: RGB = [110, 146, 124];
+const LE_BEARD: RGB = [30, 32, 44];
+const LE_EYE: RGB = [250, 224, 96];
+
+// LeChuck — the ghostly zombie-pirate captain, hovering, glowing-eyed.
+export function drawLeChuck(ctx: CanvasRenderingContext2D, fx: number, fy: number, facing: 'left' | 'right' = 'left', t = 0) {
+  const cx = Math.round(fx);
+  const fyR = Math.round(fy);
+  const float = Math.round(Math.sin(t * 2) * 1.4);
+  ctx.save();
+  if (facing === 'left') { ctx.translate(cx * 2, 0); ctx.scale(-1, 1); }
+  blk(ctx, cx - 6, fyR - 18 + float, 5, 16, [38, 30, 40]);
+  blk(ctx, cx + 1, fyR - 18 + float, 5, 16, [38, 30, 40]);
+  const ty = fyR - 42 + float;
+  blk(ctx, cx - 10, ty, 20, 28, LE_COAT);
+  px(ctx, cx - 9, ty + 1, 4, 26, LE_COAT_L);
+  px(ctx, cx - 1, ty + 2, 2, 24, [54, 26, 34]);
+  for (let i = 0; i < 4; i++) px(ctx, cx - 1, ty + 4 + i * 5, 2, 2, [228, 188, 96]);
+  blk(ctx, cx - 13, ty + 3, 4, 17, LE_COAT);
+  px(ctx, cx - 13, ty + 18, 4, 4, LE_SKIN);
+  blk(ctx, cx + 9, ty + 3, 4, 17, LE_COAT);
+  px(ctx, cx + 9, ty + 18, 4, 4, LE_SKIN);
+  const hy = fyR - 50 + float;
+  blk(ctx, cx - 6, hy, 13, 12, LE_SKIN);
+  px(ctx, cx - 5, hy + 1, 3, 10, LE_SKIN_D);
+  px(ctx, cx - 6, hy + 8, 13, 5, LE_BEARD);
+  px(ctx, cx - 7, hy + 9, 2, 5, LE_BEARD);
+  px(ctx, cx + 6, hy + 9, 2, 5, LE_BEARD);
+  px(ctx, cx - 7, hy - 2, 14, 3, LE_BEARD);
+  px(ctx, cx - 3, hy + 4, 2, 2, LE_EYE);
+  px(ctx, cx + 3, hy + 4, 2, 2, LE_EYE);
+  ctx.restore();
+}

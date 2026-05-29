@@ -115,7 +115,8 @@ const NPCS: NPC[] = [
     accepts: {
       salvoconducto: {
         line: 'Sellado y en regla. Bien... adelante. Y mucha suerte ahí arriba: vas a necesitarla.',
-        win: true,
+        card: ['EPISODIO 1 COMPLETADO', '', 'Guybrush cruza la puerta de Montjuïc.', 'En el castillo, una vieja inscripción habla', 'de un tesoro escondido en la ciudad vieja...', 'sellado por tres llaves.', '', 'EPISODIO 2: La Ciudad'],
+        goto: 'rambla',
       },
     },
   },

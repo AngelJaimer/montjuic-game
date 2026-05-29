@@ -128,7 +128,9 @@ const NPCS: NPC[] = [
   },
 ];
 
-const EXITS: Exit[] = [];
+const EXITS: Exit[] = [
+  { id: 'toBorn', name: 'el Born', x: 304, y: 96, w: 16, h: 46, walkTo: { x: 300, y: 135 }, to: 'elborn', entry: { x: 30, y: 135 }, arrow: 'right' },
+];
 
 export const RAMBLA: Room = {
   id: 'rambla',

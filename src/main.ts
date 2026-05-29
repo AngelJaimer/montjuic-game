@@ -112,7 +112,7 @@ const state: any = {
 // ---------------- generic room hit-tests ----------------
 function inRect(mx: number, my: number, o: any) { return mx >= o.x && mx < o.x + o.w && my >= o.y && my < o.y + o.h; }
 function hitHotspotR(mx: number, my: number) { return currentRoom.hotspots.find((h) => inRect(mx, my, h)) || null; }
-function hitNPCR(mx: number, my: number) { return currentRoom.npcs.find((n) => inRect(mx, my, n)) || null; }
+function hitNPCR(mx: number, my: number) { return currentRoom.npcs.find((n) => !(n.hideIf && state.flags[n.hideIf]) && !(n.showIf && !state.flags[n.showIf]) && inRect(mx, my, n)) || null; }
 function hitExitR(mx: number, my: number) { return currentRoom.exits.find((e) => inRect(mx, my, e)) || null; }
 function isWalkableR(mx: number, my: number) { const w = currentRoom.walk; return mx >= w.minX && mx <= w.maxX && my >= w.minY && my <= w.maxY; }
 function clampWalkR(mx: number, my: number) { const w = currentRoom.walk; return { x: Math.max(w.minX, Math.min(w.maxX, mx)), y: Math.max(w.minY, Math.min(w.maxY, my)) }; }
@@ -149,7 +149,14 @@ display.addEventListener('pointerdown', (e) => {
   e.preventDefault();
   if (state.screen === 'title') { startGame(); return; }
   const { mx, my } = toInternal(e);
-  if (state.ending) return;
+  if (state.ending) {
+    if (state.ending.goto && state.now - state.ending.since > 1500) {
+      const go = state.ending.goto;
+      state.ending = null;
+      switchRoom(go, ROOMS[go].start);
+    }
+    return;
+  }
   if (state.dialogue) {
     if (my >= PANEL_Y) {
       const idx = hitDialogueOption(mx, my, dlgOptions().length);
@@ -224,13 +231,27 @@ function npcSays(npc: any, text: string) {
 function runAction(verb: string, hs: any) {
   state.guy.facing = hs.x + hs.w / 2 < state.guy.x ? 'left' : 'right';
   let text: string;
-  if (verb === 'Coger' && hs.pickup) {
-    addItem(hs.pickup.id);
-    audio.sfx('pickup');
-    state.flags['took_' + hs.pickup.id] = true;
-    const idx = currentRoom.hotspots.indexOf(hs);
-    if (idx >= 0) currentRoom.hotspots.splice(idx, 1);
-    text = hs.responses?.Coger || 'Cogido.';
+  if (hs.needs && (verb === 'Abrir' || verb === 'Usar')) {
+    if (hs.needs.every((id: string) => hasItem(id))) {
+      hs.needs.forEach((id: string) => removeItem(id));
+      if (hs.flag) state.flags[hs.flag] = true;
+      audio.sfx('win');
+      if (hs.card) state.ending = { since: state.now, lines: hs.card, goto: hs.goto };
+      text = hs.responses?.[verb] || hs.responses?.Abrir || 'Las cerraduras ceden, una tras otra...';
+    } else {
+      text = hs.needsBlocked || 'Aún me faltan llaves.';
+    }
+  } else if (verb === 'Coger' && hs.pickup) {
+    if (hs.pickupIf && !state.flags[hs.pickupIf]) {
+      text = hs.pickupBlocked || 'Ahora mismo no puedo cogerlo.';
+    } else {
+      addItem(hs.pickup.id);
+      audio.sfx('pickup');
+      state.flags['took_' + hs.pickup.id] = true;
+      const idx = currentRoom.hotspots.indexOf(hs);
+      if (idx >= 0) currentRoom.hotspots.splice(idx, 1);
+      text = hs.responses?.Coger || 'Cogido.';
+    }
   } else if (verb === 'Mirar') {
     text = hs.look || DEFAULT_RESPONSES.Mirar;
   } else {
@@ -253,11 +274,12 @@ function giveItem(npc: any, item: any) {
   if (!rule) { npcSays(npc, 'No, gracias. No me hace ninguna falta.'); return; }
   if (rule.needAlso && !hasItem(rule.needAlso)) { npcSays(npc, rule.missing || 'Te falta algo.'); return; }
   npcSays(npc, rule.line);
-  audio.sfx(rule.win ? 'win' : 'give');
+  audio.sfx(rule.win || rule.card ? 'win' : 'give');
   (rule.remove || [item.id]).forEach(removeItem);
   if (rule.give) addItem(rule.give);
   if (rule.flag) state.flags[rule.flag] = true;
-  if (rule.win) state.ending = { since: state.now };
+  if (rule.card) state.ending = { since: state.now, lines: rule.card, goto: rule.goto };
+  else if (rule.win) state.ending = { since: state.now, lines: ['EPISODIO COMPLETADO', '', 'Continuará...'] };
 }
 
 // ---------------- dialogue ----------------
@@ -359,15 +381,20 @@ function drawEnding(ctx: CanvasRenderingContext2D) {
   ctx.fillStyle = `rgba(8,6,12,${a.toFixed(2)})`;
   ctx.fillRect(0, 0, W, H);
   if (dt < 950) return;
-  const lines = ['EPISODIO 1 COMPLETADO', '', 'El Secreto de Montjuïc', '', 'Guybrush cruza la puerta del castillo,', 'y una risa fantasmal resuena en la piedra...', '', 'Continuarà...'];
-  let y = 44;
+  const lines: string[] = state.ending.lines || [];
+  let y = Math.round((H - lines.length * 12) / 2) - 4;
   for (const ln of lines) {
     if (ln) {
       const w = textWidth(ln, 1, 1);
-      const hot = ln.includes('COMPLETADO') || ln.includes('Continuarà');
+      const hot = (ln === ln.toUpperCase() && /[A-ZÁÉÍÓÚÏÑ]/.test(ln)) || ln.includes('Continuar');
       drawText(ctx, ln, Math.round(W / 2 - w / 2), y, hot ? P.verbHot : P.inkLight, 1, P.black, 1);
     }
     y += 12;
+  }
+  if (state.ending.goto && dt > 1500) {
+    const s = 'toca para continuar';
+    const w = textWidth(s, 1, 1);
+    drawText(ctx, s, Math.round(W / 2 - w / 2), H - 16, P.verbIdle, 1, P.black, 1);
   }
 }
 
@@ -558,6 +585,8 @@ function frame(ts: number) {
   if (!currentRoom.bgImage) currentRoom.overlays?.(ictx, t);
   currentRoom.dynamic?.(ictx, state, t);
   for (const npc of currentRoom.npcs) {
+    if (npc.hideIf && state.flags[npc.hideIf]) continue;
+    if (npc.showIf && !state.flags[npc.showIf]) continue;
     npc.draw(ictx, npc.feet.x, npc.feet.y, state.guy.x < npc.feet.x ? 'left' : 'right', t);
   }
   drawExitArrows(ictx, t);
@@ -593,6 +622,7 @@ requestAnimationFrame(frame);
   selectOption,
   dlgOptions,
   switchRoom,
+  addItem,
   settle() {
     if (state.target) { state.guy.x = state.target.x; state.guy.y = state.target.y; }
     state.guy.moving = false; state.target = null;

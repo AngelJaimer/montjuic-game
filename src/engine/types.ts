@@ -8,6 +8,13 @@ export interface Hotspot {
   look: string;
   responses?: Record<string, string>;
   pickup?: { id: string; name: string };
+  pickupIf?: string;        // only collectable once this flag is set
+  pickupBlocked?: string;   // line shown when trying to collect before pickupIf
+  needs?: string[];         // Abrir/Usar requires all these item ids (e.g. the vault keys)
+  needsBlocked?: string;    // line shown when items are missing
+  flag?: string;            // flag raised when the `needs` are satisfied
+  card?: string[];          // ending/transition card shown when `needs` satisfied
+  goto?: string;            // room to travel to after the card (absent = terminal)
 }
 
 // What an NPC will accept when you `Dar` an item to it.
@@ -19,6 +26,8 @@ export interface NPCAccept {
   remove?: string[];   // item ids consumed (defaults to the given item)
   flag?: string;       // flag raised
   win?: boolean;       // triggers the ending
+  card?: string[];     // ending/transition card shown on success
+  goto?: string;       // room to travel to after the card (absent = terminal)
 }
 
 export interface NPC {
@@ -33,6 +42,8 @@ export interface NPC {
   draw: (ctx: CanvasRenderingContext2D, fx: number, fy: number, facing: 'left' | 'right', t: number) => void;
   dialogue?: Dialogue;
   accepts?: Record<string, NPCAccept>;
+  hideIf?: string;          // not drawn / not interactable once this flag is set
+  showIf?: string;          // only drawn / interactable once this flag is set
 }
 
 export interface Exit {
