@@ -2,6 +2,7 @@ import { P, css, mix, type RGB } from '../art/palette';
 import { Pixels, rampPick, ditherPick } from '../art/dither';
 import { drawAduanero, drawStan } from '../art/actor';
 import { ADUANERO_DIALOGUE, STAN_DIALOGUE, type Dialogue } from '../content/dialogues';
+import { tr } from '../i18n';
 
 // Play-area dimensions (the painted scene; the verb panel lives below it).
 export const PLAY_W = 320;
@@ -172,7 +173,7 @@ export function buildPortScene(): HTMLCanvasElement {
   tri(ctx, 44, 94, 53, 88, 62, 94, P.woodDark);
   // hanging sign
   blk(ctx, 20, 74, 30, 9, P.parchment);
-  label(ctx, 'ADUANA', 24, 75, P.woodShadow, 6);
+  label(ctx, tr('ADUANA'), 24, 75, P.woodShadow, 6);
   r(ctx, 34, 71, 1, 3, P.woodDark);
 
   // lantern post (right of the Aduana)

@@ -1,19 +1,26 @@
 import { drawText, textWidth } from '../art/font';
 import type { RGB } from '../art/palette';
+import { tr, LANG } from '../i18n';
 
-// Build the SCUMM sentence line from the current verb and what's under the cursor.
+// Build the SCUMM sentence line from the current verb and what's under the
+// cursor. Each token is translated; English verb phrases ("Look at", "Give")
+// already carry their preposition, so `${verb} ${object}` reads correctly.
 export function buildSentence(state: any): string {
   const h = state.hover;
   if (state.selectedItem) {
-    const base = `Dar ${state.selectedItem.name}`;
-    return h && h.hotspot ? `${base} a ${h.hotspot.name}` : base;
+    const base = `${tr('Dar')} ${tr(state.selectedItem.name)}`;
+    if (h && h.hotspot) {
+      const to = LANG === 'en' ? 'to' : 'a';
+      return `${base} ${to} ${tr(h.hotspot.name)}`;
+    }
+    return base;
   }
-  if (!h) return state.verb;
-  if (h.exit) return `Ir a ${h.exit.name}`;
-  if (h.hotspot) return `${state.verb} ${h.hotspot.name}`;
-  if (h.panelVerb) return h.panelVerb;
-  if (h.walkable) return 'Caminar a';
-  return state.verb;
+  if (!h) return tr(state.verb);
+  if (h.exit) return `${tr('Ir a')} ${tr(h.exit.name)}`;
+  if (h.hotspot) return `${tr(state.verb)} ${tr(h.hotspot.name)}`;
+  if (h.panelVerb) return tr(h.panelVerb);
+  if (h.walkable) return tr('Caminar a');
+  return tr(state.verb);
 }
 
 export function wrapText(s: string, maxW: number): string[] {

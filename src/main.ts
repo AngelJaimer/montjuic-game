@@ -9,6 +9,7 @@ import { drawText, textWidth } from './art/font';
 import { P, css, type RGB } from './art/palette';
 import * as audio from './audio/engine';
 import { buildTitleScene } from './screens/title';
+import { tr, getLang, setLang } from './i18n';
 
 const W = 320, H = 200, PLAY_H = 144;
 
@@ -83,6 +84,18 @@ function applyBgImage(room: any) {
 let currentRoom = ROOMS[START_ROOM];
 bgCache[currentRoom.id] = currentRoom.build();
 applyBgImage(currentRoom);
+
+// Room labels (e.g. "El Puerto") are painted into the cached background by
+// build(), so switching language must repaint every cached scene.
+function setLanguage(l: 'en' | 'es') {
+  if (getLang() === l) return;
+  setLang(l);
+  for (const id of Object.keys(bgCache)) {
+    bgCache[id] = ROOMS[id].build();
+    applyBgImage(ROOMS[id]);
+  }
+  audio.sfx('ui');
+}
 
 const state: any = {
   verb: 'Mirar',
@@ -222,10 +235,12 @@ function hasItem(id: string) { return !!state.inventory.find((it: any) => it.id 
 
 // ---------------- actions ----------------
 function say(text: string) {
-  state.speech = { lines: wrapText(text, 180), until: state.now + Math.max(1500, text.length * 55), color: [238, 238, 224], x: state.guy.x };
+  const t = tr(text);
+  state.speech = { lines: wrapText(t, 180), until: state.now + Math.max(1500, t.length * 55), color: [238, 238, 224], x: state.guy.x };
 }
 function npcSays(npc: any, text: string) {
-  state.npcSpeech = { lines: wrapText(text, 190), until: state.now + Math.max(1800, text.length * 55), color: npc.color, x: npc.feet.x, headY: npc.feet.y - 52 };
+  const t = tr(text);
+  state.npcSpeech = { lines: wrapText(t, 190), until: state.now + Math.max(1800, t.length * 55), color: npc.color, x: npc.feet.x, headY: npc.feet.y - 52 };
 }
 
 function runAction(verb: string, hs: any) {
@@ -288,7 +303,7 @@ function dlgOptions() {
   return d ? currentOptions(d.npc.dialogue, d.node, state.flags, state.used, d.npc.id) : [];
 }
 function openDialogue(npc: any) {
-  state.dialogue = { npc, node: 'start', lines: wrapText(npc.dialogue.start.npc, 190) };
+  state.dialogue = { npc, node: 'start', lines: wrapText(tr(npc.dialogue.start.npc), 190) };
   state.speech = null; state.npcSpeech = null;
 }
 function selectOption(i: number) {
@@ -299,10 +314,11 @@ function selectOption(i: number) {
   if (o.set) state.flags[o.set] = true;
   if (o.give) addItem(o.give);
   if (o.once) state.used.add(o.key);
-  state.speech = { lines: wrapText(o.text, 180), until: state.now + Math.max(1200, o.text.length * 45), color: [238, 238, 224], x: state.guy.x };
+  const ot = tr(o.text);
+  state.speech = { lines: wrapText(ot, 180), until: state.now + Math.max(1200, ot.length * 45), color: [238, 238, 224], x: state.guy.x };
   if (o.to === 'end') { state.dialogue = null; return; }
   d.node = o.to;
-  d.lines = wrapText(d.npc.dialogue[o.to].npc, 190);
+  d.lines = wrapText(tr(d.npc.dialogue[o.to].npc), 190);
 }
 
 // ---------------- rooms ----------------
@@ -385,14 +401,15 @@ function drawEnding(ctx: CanvasRenderingContext2D) {
   let y = Math.round((H - lines.length * 12) / 2) - 4;
   for (const ln of lines) {
     if (ln) {
-      const w = textWidth(ln, 1, 1);
-      const hot = (ln === ln.toUpperCase() && /[A-ZÁÉÍÓÚÏÑ]/.test(ln)) || ln.includes('Continuar');
-      drawText(ctx, ln, Math.round(W / 2 - w / 2), y, hot ? P.verbHot : P.inkLight, 1, P.black, 1);
+      const dln = tr(ln);
+      const w = textWidth(dln, 1, 1);
+      const hot = (dln === dln.toUpperCase() && /[A-ZÁÉÍÓÚÏÑ]/.test(dln)) || dln.includes('Continuar') || dln.includes('continued');
+      drawText(ctx, dln, Math.round(W / 2 - w / 2), y, hot ? P.verbHot : P.inkLight, 1, P.black, 1);
     }
     y += 12;
   }
   if (state.ending.goto && dt > 1500) {
-    const s = 'toca para continuar';
+    const s = tr('toca para continuar');
     const w = textWidth(s, 1, 1);
     drawText(ctx, s, Math.round(W / 2 - w / 2), H - 16, P.verbIdle, 1, P.black, 1);
   }
@@ -412,11 +429,11 @@ function drawTitle(t: number) {
     const flap = Math.sin(t * 5 + bx) > 0 ? 0 : 1;
     ictx.fillRect(x, y, 1, 1); ictx.fillRect(x - 2, y - 1 + flap, 2, 1); ictx.fillRect(x + 1, y - 1 + flap, 2, 1);
   }
-  centerText('EL SECRETO DE', 26, 2, P.inkLight);
+  centerText(tr('EL SECRETO DE'), 26, 2, P.inkLight);
   centerText('MONTJUÏC', 50, 4, P.verbHot);
-  centerText('Episodio 1: El Puerto', 98, 1, P.inkLight);
-  if (Math.sin(t * 3) > 0) centerText('Haz clic para empezar', 172, 1, P.verbHot);
-  centerText('un spin-off de Monkey Island · por Angel Jaime', 190, 1, P.verbIdle);
+  centerText(tr('Episodio 1: El Puerto'), 98, 1, P.inkLight);
+  if (Math.sin(t * 3) > 0) centerText(tr('Haz clic para empezar'), 172, 1, P.verbHot);
+  centerText(tr('un spin-off de Monkey Island · por Angel Jaime'), 190, 1, P.verbIdle);
 }
 function drawMusicIcon(ctx: CanvasRenderingContext2D) {
   const on = !audio.isMuted();
@@ -461,6 +478,11 @@ function settingsHoverAt(mx: number, my: number) {
 }
 function handleSettingsClick(mx: number, my: number) {
   if (mx < SETT.x || mx > SETT.x + SETT.w || my < SETT.y || my > SETT.y + SETT.h) { state.settings = false; return; }
+  // language toggle (top-right): EN / ES
+  if (my >= SETT.y + 3 && my < SETT.y + 15 && mx >= SETT.x + SETT.w - 46) {
+    setLanguage(mx < SETT.x + SETT.w - 26 ? 'en' : 'es');
+    return;
+  }
   for (let i = 0; i < audio.SONGS.length; i++) if (my >= songY(i) - 2 && my < songY(i) + 9) { selectSong(audio.SONGS[i].key); return; }
   if (my >= SOUND_Y() - 2 && my < SOUND_Y() + 9) { audio.toggleMute(); return; }
   if (my >= SAVE_Y() - 2 && my < SAVE_Y() + 10) {
@@ -481,27 +503,30 @@ function drawSettings(ctx: CanvasRenderingContext2D) {
   ctx.fillStyle = css(P.panelWoodLit); ctx.fillRect(SETT.x, SETT.y, SETT.w, 1); ctx.fillRect(SETT.x, SETT.y, 1, SETT.h);
   ctx.fillStyle = css(P.black); ctx.fillRect(SETT.x, SETT.y + SETT.h - 1, SETT.w, 1); ctx.fillRect(SETT.x + SETT.w - 1, SETT.y, 1, SETT.h);
   const ctr = (s: string, y: number, col: RGB) => { const w = textWidth(s, 1, 1); drawText(ctx, s, Math.round(SETT.x + SETT.w / 2 - w / 2), y, col, 1, P.black, 1); };
-  ctr('AJUSTES', SETT.y + 5, P.verbHot);
-  drawText(ctx, 'Música', SETT.x + 8, SETT.y + 18, P.inkLight, 1, P.black, 1);
+  ctr(tr('AJUSTES'), SETT.y + 5, P.verbHot);
+  // language toggle, top-right corner of the panel (collision-free)
+  drawText(ctx, 'EN', SETT.x + SETT.w - 42, SETT.y + 5, getLang() === 'en' ? P.verbHot : P.verbIdle, 1, P.black, 1);
+  drawText(ctx, 'ES', SETT.x + SETT.w - 22, SETT.y + 5, getLang() === 'es' ? P.verbHot : P.verbIdle, 1, P.black, 1);
+  drawText(ctx, tr('Música'), SETT.x + 8, SETT.y + 18, P.inkLight, 1, P.black, 1);
   for (let i = 0; i < audio.SONGS.length; i++) {
     const cur = audio.getSong() === audio.SONGS[i].key;
     const col = cur ? P.verbHot : (state.settingsHover === i ? P.inkLight : P.verbIdle);
-    drawText(ctx, (cur ? '· ' : '  ') + audio.SONGS[i].label, SETT.x + 14, songY(i), col, 1, P.black, 1);
+    drawText(ctx, (cur ? '· ' : '  ') + tr(audio.SONGS[i].label), SETT.x + 14, songY(i), col, 1, P.black, 1);
   }
-  drawText(ctx, 'Sonido: ' + (audio.isMuted() ? 'Off' : 'On'), SETT.x + 8, SOUND_Y(), P.inkLight, 1, P.black, 1);
-  drawText(ctx, 'Partida', SETT.x + 8, SETT.y + 94, P.inkLight, 1, P.black, 1);
-  drawText(ctx, 'Guardar', SETT.x + 8, SAVE_Y(), P.verbIdle, 1, P.black, 1);
-  drawText(ctx, 'Cargar', SETT.x + 58, SAVE_Y(), hasSave() ? P.verbIdle : P.panelWoodLit, 1, P.black, 1);
-  drawText(ctx, 'Borrar', SETT.x + 102, SAVE_Y(), P.verbIdle, 1, P.black, 1);
+  drawText(ctx, tr('Sonido') + ': ' + (audio.isMuted() ? 'Off' : 'On'), SETT.x + 8, SOUND_Y(), P.inkLight, 1, P.black, 1);
+  drawText(ctx, tr('Partida'), SETT.x + 8, SETT.y + 94, P.inkLight, 1, P.black, 1);
+  drawText(ctx, tr('Guardar'), SETT.x + 8, SAVE_Y(), P.verbIdle, 1, P.black, 1);
+  drawText(ctx, tr('Cargar'), SETT.x + 58, SAVE_Y(), hasSave() ? P.verbIdle : P.panelWoodLit, 1, P.black, 1);
+  drawText(ctx, tr('Borrar'), SETT.x + 102, SAVE_Y(), P.verbIdle, 1, P.black, 1);
   drawText(ctx, '(i)', SETT.x + 150, SAVE_Y(), state.showSaveInfo ? P.verbHot : P.verbIdle, 1, P.black, 1);
   if (state.showSaveInfo) {
     const info = ['Tu progreso se guarda solo en', 'este navegador. Sobrevive al', 'refrescar: pulsa Cargar para', 'seguir. Borrar lo elimina.'];
-    for (let i = 0; i < info.length; i++) drawText(ctx, info[i], SETT.x + 8, SETT.y + 120 + i * 9, P.skin, 1, P.black, 1);
+    for (let i = 0; i < info.length; i++) drawText(ctx, tr(info[i]), SETT.x + 8, SETT.y + 120 + i * 9, P.skin, 1, P.black, 1);
   } else if (state.saveMsg && state.now < state.saveMsgUntil) {
-    ctr(state.saveMsg, SETT.y + 126, P.verbHot);
+    ctr(tr(state.saveMsg), SETT.y + 126, P.verbHot);
   }
-  drawText(ctx, 'Acerca de', SETT.x + 8, CLOSE_Y(), P.verbIdle, 1, P.black, 1);
-  drawText(ctx, 'Cerrar', SETT.x + SETT.w - 44, CLOSE_Y(), P.verbIdle, 1, P.black, 1);
+  drawText(ctx, tr('Acerca de'), SETT.x + 8, CLOSE_Y(), P.verbIdle, 1, P.black, 1);
+  drawText(ctx, tr('Cerrar'), SETT.x + SETT.w - 44, CLOSE_Y(), P.verbIdle, 1, P.black, 1);
 }
 
 // ---------------- about / legal ----------------
@@ -531,12 +556,12 @@ function drawAbout(ctx: CanvasRenderingContext2D) {
   ctx.fillStyle = css(P.panelWoodLit); ctx.fillRect(ABOUT.x, ABOUT.y, ABOUT.w, 1); ctx.fillRect(ABOUT.x, ABOUT.y, 1, ABOUT.h);
   ctx.fillStyle = css(P.black); ctx.fillRect(ABOUT.x, ABOUT.y + ABOUT.h - 1, ABOUT.w, 1); ctx.fillRect(ABOUT.x + ABOUT.w - 1, ABOUT.y, 1, ABOUT.h);
   const ctrA = (s: string, y: number, col: RGB) => { const w = textWidth(s, 1, 1); drawText(ctx, s, Math.round(ABOUT.x + ABOUT.w / 2 - w / 2), y, col, 1, P.black, 1); };
-  ctrA('EL SECRETO DE MONTJUÏC', ABOUT.y + 6, P.verbHot);
+  ctrA(tr('EL SECRETO DE MONTJUÏC'), ABOUT.y + 6, P.verbHot);
   for (let i = 0; i < ABOUT_LINES.length; i++) {
     const col = ABOUT_LINES[i].startsWith('(c)') ? P.inkLight : P.skin;
-    drawText(ctx, ABOUT_LINES[i], ABOUT.x + 9, ABOUT.y + 20 + i * 9, col, 1, P.black, 1);
+    drawText(ctx, tr(ABOUT_LINES[i]), ABOUT.x + 9, ABOUT.y + 20 + i * 9, col, 1, P.black, 1);
   }
-  ctrA('Volver', ABOUT.y + ABOUT.h - 11, P.verbHot);
+  ctrA(tr('Volver'), ABOUT.y + ABOUT.h - 11, P.verbHot);
 }
 
 // ---------------- loop ----------------
@@ -565,21 +590,14 @@ function update(dt: number) {
   }
 }
 
-function frame(ts: number) {
-  if (!start) { start = ts; last = ts; }
-  const dt = Math.min(0.05, (ts - last) / 1000);
-  last = ts;
-  state.now = ts;
-  const t = (ts - start) / 1000;
-
+// Paint one full frame at simulation time `t` (seconds). Pure draw — no state
+// advancement — so it's reusable by both the rAF loop and the headless render hook.
+function paint(t: number) {
   if (state.screen === 'title') {
     drawTitle(t);
     dctx.drawImage(internal, 0, 0);
-    requestAnimationFrame(frame);
     return;
   }
-
-  if (!state.ending && !state.settings) update(dt);
 
   // Clear the frame first: scene backgrounds may not cover every pixel, and
   // without this, old text/sprites smear and stale scenery bleeds through.
@@ -614,6 +632,17 @@ function frame(ts: number) {
   if (state.ending) drawEnding(ictx);
 
   dctx.drawImage(internal, 0, 0);
+}
+
+function frame(ts: number) {
+  if (!start) { start = ts; last = ts; }
+  const dt = Math.min(0.05, (ts - last) / 1000);
+  last = ts;
+  state.now = ts;
+  const t = (ts - start) / 1000;
+
+  if (state.screen !== 'title' && !state.ending && !state.settings) update(dt);
+  paint(t);
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
@@ -627,6 +656,10 @@ requestAnimationFrame(frame);
   dlgOptions,
   switchRoom,
   addItem,
+  setLang: setLanguage,
+  // Force-paint one frame at time `t` (ms). The page is document.hidden in a
+  // headless tab so rAF is paused; call this to capture a frame.
+  render(t = 2000) { state.now = t; paint(t / 1000); },
   settle() {
     if (state.target) { state.guy.x = state.target.x; state.guy.y = state.target.y; }
     state.guy.moving = false; state.target = null;

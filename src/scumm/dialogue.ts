@@ -1,6 +1,7 @@
 import { P, css } from '../art/palette';
 import { drawText } from '../art/font';
 import { PANEL_Y, PANEL_H } from './ui';
+import { tr } from '../i18n';
 import type { Dialogue, Opt } from '../content/dialogues';
 
 const OPT_X = 8;
@@ -27,7 +28,7 @@ export function drawDialoguePanel(ctx: CanvasRenderingContext2D, options: Array<
 
   for (let i = 0; i < options.length; i++) {
     const hot = i === hoverIdx;
-    drawText(ctx, (i + 1) + '. ' + options[i].text, OPT_X, OPT_Y + i * OPT_H, hot ? P.verbHot : P.verbIdle, 1, P.black, 1);
+    drawText(ctx, (i + 1) + '. ' + tr(options[i].text), OPT_X, OPT_Y + i * OPT_H, hot ? P.verbHot : P.verbIdle, 1, P.black, 1);
   }
 }
 

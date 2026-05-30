@@ -1,6 +1,7 @@
 import { P, css, type RGB } from '../art/palette';
 import { drawText } from '../art/font';
 import { VERB_GRID } from './verbs';
+import { tr } from '../i18n';
 
 export const PANEL_Y = 144;
 export const PANEL_H = 56;
@@ -38,7 +39,7 @@ export function drawPanel(ctx: CanvasRenderingContext2D, sentence: string, verb:
   for (let row = 0; row < 3; row++) {
     for (let col = 0; col < 3; col++) {
       const v = VERB_GRID[row][col];
-      text(ctx, v, VX + col * COLW, VY + row * ROWH, v === verb ? P.verbHot : P.verbIdle);
+      text(ctx, tr(v), VX + col * COLW, VY + row * ROWH, v === verb ? P.verbHot : P.verbIdle);
     }
   }
 
