@@ -116,9 +116,29 @@ export function drawDisplayKey(ctx: CanvasRenderingContext2D) {
   ctx.fillRect(264, 88, 2, 2);
 }
 
+// a string of garlic hanging from a little balcony on the left building —
+// drawn until it's taken (gated on took_ajos). Cream bulbs on the dark
+// STONE facade read clearly; this is the pickup the player must spot.
+export function drawGarlic(ctx: CanvasRenderingContext2D) {
+  // balcony rail + posts
+  r(ctx, 102, 62, 22, 2, [70, 50, 34]);
+  r(ctx, 103, 56, 2, 7, [70, 50, 34]);
+  r(ctx, 121, 56, 2, 7, [70, 50, 34]);
+  // braid string
+  ctx.strokeStyle = css([182, 168, 128]); ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(112, 64); ctx.lineTo(112, 84); ctx.stroke();
+  // garlic bulbs (cream, lightly shaded)
+  const bulbs: [number, number][] = [[108, 68], [116, 71], [107, 75], [116, 79], [112, 83]];
+  for (const [bx, by] of bulbs) {
+    ctx.fillStyle = css([238, 232, 214]);
+    ctx.beginPath(); ctx.ellipse(bx, by, 3, 4, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = css([200, 194, 170]); ctx.fillRect(bx - 1, by - 2, 1, 4);
+  }
+}
+
 const HOTSPOTS: Hotspot[] = [
   {
-    id: 'ajos', name: 'la ristra de ajos', x: 148, y: 56, w: 16, h: 24, walkTo: { x: 156, y: 138 },
+    id: 'ajos', name: 'la ristra de ajos', x: 100, y: 52, w: 26, h: 36, walkTo: { x: 114, y: 138 },
     look: 'Una ristra de ajos colgada de un balcón. Espanta vampiros y, según dicen, a algún que otro pretendiente.',
     responses: { Coger: 'Una buena ristra de ajos. La vidente estará encantada.' },
     pickup: { id: 'ajos', name: 'la ristra de ajos' },
@@ -160,7 +180,10 @@ export const ELBORN: Room = {
   id: 'elborn',
   build: buildElbornScene,
   overlays: elbornOverlays,
-  dynamic: (ctx, state) => { if (!state.flags.key2) drawDisplayKey(ctx); },
+  dynamic: (ctx, state) => {
+    if (!state.flags.took_ajos) drawGarlic(ctx);
+    if (!state.flags.key2) drawDisplayKey(ctx);
+  },
   hotspots: HOTSPOTS,
   npcs: NPCS,
   exits: EXITS,

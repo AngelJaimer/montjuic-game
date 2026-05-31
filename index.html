@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
@@ -48,12 +48,12 @@
     <canvas id="game"></canvas>
     <div id="rotate">
       <div class="ico">📱</div>
-      <div>Gira el dispositivo en horizontal</div>
+      <div id="rotatemsg">Rotate your device to landscape</div>
       <div class="sub">El Secreto de Montjuïc</div>
     </div>
     <audio id="audiosink" playsinline></audio>
     <div id="pwahint">
-      📲 Para <b>pantalla completa</b>: pulsa <b>Compartir</b> y «<b>Añadir a pantalla de inicio</b>», y abre el juego desde el icono.
+      <span id="pwahinttext">📲 For <b>fullscreen</b>: tap <b>Share</b> and <b>Add to Home Screen</b>, then open the game from the icon.</span>
       <span class="x" id="pwahintx">✕</span>
     </div>
     <script type="module" src="/src/main.ts"></script>

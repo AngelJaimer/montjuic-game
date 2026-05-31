@@ -54,6 +54,20 @@ const pwahint = document.getElementById('pwahint');
   }
 }
 
+// The rotate prompt and the iOS PWA hint live in index.html (real HTML, not
+// canvas), so they're set here by language instead of via tr(). Re-applied on
+// language change (setLanguage).
+function applyHtmlLang() {
+  const en = getLang() === 'en';
+  const rm = document.getElementById('rotatemsg');
+  if (rm) rm.textContent = en ? 'Rotate your device to landscape' : 'Gira el dispositivo en horizontal';
+  const ph = document.getElementById('pwahinttext');
+  if (ph) ph.innerHTML = en
+    ? '📲 For <b>fullscreen</b>: tap <b>Share</b> and <b>Add to Home Screen</b>, then open the game from the icon.'
+    : '📲 Para <b>pantalla completa</b>: pulsa <b>Compartir</b> y «<b>Añadir a pantalla de inicio</b>», y abre el juego desde el icono.';
+}
+applyHtmlLang();
+
 const internal = document.createElement('canvas');
 internal.width = W;
 internal.height = H;
@@ -90,6 +104,7 @@ applyBgImage(currentRoom);
 function setLanguage(l: 'en' | 'es') {
   if (getLang() === l) return;
   setLang(l);
+  applyHtmlLang();
   for (const id of Object.keys(bgCache)) {
     bgCache[id] = ROOMS[id].build();
     applyBgImage(ROOMS[id]);

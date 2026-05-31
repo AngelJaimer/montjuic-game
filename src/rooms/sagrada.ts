@@ -97,6 +97,17 @@ export function drawCeremonyKey(ctx: CanvasRenderingContext2D) {
   ctx.fillStyle = css([255, 240, 184]); ctx.fillRect(140, 102, 1, 1);
 }
 
+// the architect's rolled blueprints, snagged on the scaffold — drawn until
+// taken (gated on took_planos). Blue roll reads against the stone/sky.
+export function drawBlueprints(ctx: CanvasRenderingContext2D) {
+  r(ctx, 198, 44, 14, 10, [86, 116, 166]);   // blue paper roll
+  r(ctx, 198, 44, 14, 2, [126, 156, 200]);   // top highlight
+  r(ctx, 196, 43, 3, 12, [66, 92, 138]);      // rolled end (left)
+  r(ctx, 211, 43, 3, 12, [66, 92, 138]);      // rolled end (right)
+  r(ctx, 202, 48, 7, 1, [202, 218, 238]);     // faint drawn lines
+  r(ctx, 203, 50, 5, 1, [202, 218, 238]);
+}
+
 const HOTSPOTS: Hotspot[] = [
   {
     id: 'piedra', name: 'la primera piedra', x: 126, y: 102, w: 38, h: 24, walkTo: { x: 144, y: 138 },
@@ -143,7 +154,10 @@ const EXITS: Exit[] = [
 export const SAGRADA: Room = {
   id: 'sagrada',
   build: buildSagradaScene,
-  dynamic: (ctx, state) => { if (!state.flags.took_clau3) drawCeremonyKey(ctx); },
+  dynamic: (ctx, state) => {
+    if (!state.flags.took_planos) drawBlueprints(ctx);
+    if (!state.flags.took_clau3) drawCeremonyKey(ctx);
+  },
   hotspots: HOTSPOTS,
   npcs: NPCS,
   exits: EXITS,
